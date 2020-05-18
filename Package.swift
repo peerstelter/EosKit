@@ -17,16 +17,17 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/SammyTheHand/OSCKit", .branch("OSCK-#15"))
+        .package(url: "https://github.com/SammyTheHand/OSCKit", .branch("develop")),
+        .package(name: "NetUtils", url: "https://github.com/svdo/swift-netutils", from: "4.1.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "EosKit",
-            dependencies: ["OSCKit"]),
+            dependencies: ["OSCKit", "NetUtils"]),
         .testTarget(
             name: "EosKitTests",
-            dependencies: ["EosKit"]),
+            dependencies: ["EosKit", "NetUtils"]),
     ]
 )
