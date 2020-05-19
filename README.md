@@ -6,7 +6,7 @@
 Communicate with an [Eos](https://www.etcconnect.com/Products/Consoles/Eos-Family/) console.
 
 ## Overview
-The EosKit package provides the classes needed for your apps to communicate an Eos console.
+The EosKit package provides the classes needed for your apps to communicate with an Eos console.
 
 ## Installation
 
