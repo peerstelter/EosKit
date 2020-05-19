@@ -29,25 +29,31 @@ import OSCKit
 import NetUtils
 
 public protocol EosBrowserDelegate {
-    func browser(_: EosBrowser, didFindPrimary message: OSCMessage)
+    func browser(_: EosBrowser, didFindConsole console: EosConsole)
 }
 
 public final class EosBrowser {
     
-    private let request = OSCMessage(messageWithAddressPattern: requestAddressPattern, arguments: [])
+    private lazy var request = OSCMessage(messageWithAddressPattern: requestAddressPattern, arguments: [port, name])
     private var clients: [OSCClient] = []
     private let server = OSCServer()
     private var refreshTimer: Timer?
+    private let port: UInt16
+    private let name: String
     
     public var delegate: EosBrowserDelegate?
     
     /// A browser able to discover Eos consoles on one or more network interfaces.
     ///
+    /// - Parameter name: A name for the browser that will show in Eos' diagnostics (Tab 99).
+    /// - Parameter port: The port Eos consoles should reply to.
     /// - Parameter interfaces: An array of network interfaces to search for Eos consoles on.
     ///                         An interface may be specified by name (e.g. "en1" or "lo0") or by IP address (e.g. "192.168.4.34").
     ///                         Interfaces can be `nil`, in which case the browser will search on all available network interfaces.
-    public init(interfaces: [String]? = nil) {
-        server.port = receivePort
+    public init(name: String = "EosKit", port: UInt16 = 3035, interfaces: [String]? = nil) {
+        self.name = name
+        self.port = port
+        server.port = port
         if let interfaces = interfaces, !interfaces.isEmpty {
             // Create OSCClients for each given interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
@@ -79,14 +85,14 @@ public final class EosBrowser {
         } catch let error as NSError {
             print(error)
         }
-        refresh(every: 1)
+        refresh(every: 3)
     }
     
     public func stop() {
+        server.stopListening()
+        server.delegate = nil
         stopRefreshTimer()
         clients.removeAll()
-        server.delegate = nil
-        server.stopListening()
     }
     
     @objc func requestConsole(timer: Timer) {
@@ -112,7 +118,7 @@ public final class EosBrowser {
     /// - Parameter interface:  An Interface the OSC Client will broadcast on.
     private func client(with interface: Interface) -> OSCClient {
         let client = OSCClient()
-        client.port = sendPort
+        client.port = 3034
         client.interface = interface.name
         client.host = interface.broadcastAddress
         return client
@@ -123,7 +129,9 @@ public final class EosBrowser {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-        delegate?.browser(self, didFindPrimary: message)
+        guard let message.addressPattern == replyAddressPattern, message.arguments.count == 2, let details = message.arguments[1] as? String else { return }
+        let console = EosConsole(name: <#T##String#>, type: <#T##EosConsole.EosConsoleType#>)
+        delegate?.browser(self, didFindConsole: message)
     }
     
     public func take(bundle: OSCBundle) {

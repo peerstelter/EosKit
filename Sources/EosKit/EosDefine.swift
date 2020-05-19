@@ -1,8 +1,8 @@
 //
-//  MockEosBrowserDelegate.swift
+//  EosBrowser.swift
 //  EosKit
 //
-//  Created by Sam Smallman on 16/05/2020.
+//  Created by Sam Smallman on 12/05/2020.
 //  Copyright © 2020 Sam Smallman. https://github.com/SammyTheHand
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,29 +22,8 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
-//
 
 import Foundation
-import XCTest
-import OSCKit
-@testable import EosKit
 
-internal final class MockEosBrowserDelegate: EosBrowserDelegate {
-    
-    internal typealias handler = (OSCMessage) -> Void
-    
-    internal var messages: [OSCMessage] = []
-    private let callback: handler
-    
-    init(callback: @escaping handler) {
-        self.callback = callback
-    }
-    
-    func browser(_: EosBrowser, didFindPrimary message: OSCMessage) {
-        if message.addressPattern == replyAddressPattern {
-            messages.append(message)
-            callback(message)
-        }
-    }
-    
-}
+internal let requestAddressPattern = "/etc/discovery/request"
+internal let replyAddressPattern = "/etc/discovery/reply"
