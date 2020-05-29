@@ -87,10 +87,8 @@ final class EosBrowserTests: XCTestCase {
     func testResponseMessage() {
         weak var promise = expectation(description: "No reply")
         browser = EosBrowser()
-        let mock = MockEosBrowserDelegate(callback: { message in
-            print(message.addressPattern)
-            print(message.arguments)
-            if message.arguments.count == 1, let argument = message.arguments.first as? String, argument == "EOSKIT" {
+        let mock = MockEosBrowserDelegate(callback: { console in
+            if console.type != .unknown {
                 promise!.fulfill()
                 promise = nil
             }

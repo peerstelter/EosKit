@@ -26,13 +26,33 @@
 
 import Foundation
 
-final class EosConsole {
+public final class EosConsole {
+    
+    public enum ConsoleType: String {
+        case nomad = "ETCnomad"
+        case nomadPuck = "ETCnomad Puck"
+        case element = "Element"
+        case element2 = "Element2"
+        case ion = "Ion"
+        case ionXE = "IonXE"
+        case ionXE20 = "IonXE20"
+        case eos = "Eos"
+        case eosRVI = "Eos RVI"
+        case eosRPU = "Eos RPU"
+        case ti = "Ti"
+        case gio = "Gio"
+        case gio5 = "Gio@5"
+        case unknown
+    }
     
     public let name: String
-    public let type: String
+    public let type: ConsoleType
+    public let port: UInt16
     
-    public init(name: String, type: String) {
+    public init(name: String, type: ConsoleType, port: UInt16) {
         self.name = name
         self.type = type
+        self.port = port
+        print("Initialised with \(name) : \(type.rawValue) : \(port)")
     }
 }

@@ -129,9 +129,22 @@ public final class EosBrowser {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-        guard let message.addressPattern == replyAddressPattern, message.arguments.count == 2, let details = message.arguments[1] as? String else { return }
-        let console = EosConsole(name: <#T##String#>, type: <#T##EosConsole.EosConsoleType#>)
-        delegate?.browser(self, didFindConsole: message)
+        guard message.addressPattern == replyAddressPattern, message.arguments.count == 2 else { return }
+        // Get the consoles receive port.
+        guard let consolePort = message.arguments[0] as? NSNumber else { return }
+        // Get the consoles name and type.
+        guard let details = message.arguments[1] as? String else { return }
+        // Console name and type are received within the same argument string e.g. "iMac (ETCnomad)" or "RPU3 (Eos RPU)".
+        let typeWithBrackets = details[details.lastIndex(of: "(")!...details.lastIndex(of: ")")!]
+        let nameWithSpace = details[details.startIndex..<typeWithBrackets.startIndex]
+        // Remove the space at the end.
+        let name = String(nameWithSpace.dropLast())
+        // Remove the brackets.
+        let typeString = String(typeWithBrackets.dropFirst().dropLast())
+        let type = EosConsole.ConsoleType(rawValue: typeString) ?? .unknown
+        
+        let console = EosConsole(name: name, type: type, port: UInt16(exactly: consolePort) ?? 3032)
+        delegate?.browser(self, didFindConsole: console)
     }
     
     public func take(bundle: OSCBundle) {

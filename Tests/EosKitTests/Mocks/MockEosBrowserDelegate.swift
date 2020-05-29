@@ -30,21 +30,19 @@ import OSCKit
 @testable import EosKit
 
 internal final class MockEosBrowserDelegate: EosBrowserDelegate {
+
+    internal typealias handler = (EosConsole) -> Void
     
-    internal typealias handler = (OSCMessage) -> Void
-    
-    internal var messages: [OSCMessage] = []
+    internal var consoles: [EosConsole] = []
     private let callback: handler
     
     init(callback: @escaping handler) {
         self.callback = callback
     }
     
-    func browser(_: EosBrowser, didFindPrimary message: OSCMessage) {
-        if message.addressPattern == replyAddressPattern {
-            messages.append(message)
-            callback(message)
-        }
+    func browser(_: EosBrowser, didFindConsole console: EosConsole) {
+        consoles.append(console)
+        callback(console)
     }
     
 }
