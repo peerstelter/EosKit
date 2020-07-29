@@ -3,7 +3,7 @@
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
-//  Copyright © 2020 Sam Smallman. https://github.com/SammyTheHand
+//  Copyright © 2020 Sam Smallman. https://github.com/SammySmallman
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -47,12 +47,14 @@ public final class EosConsole {
     
     public let name: String
     public let type: ConsoleType
+    public let host: String
     public let port: UInt16
     
-    public init(name: String, type: ConsoleType, port: UInt16) {
+    public init(name: String, type: ConsoleType, host: String, port: UInt16) {
         self.name = name
         self.type = type
+        self.host = host
         self.port = port
-        print("Initialised with \(name) : \(type.rawValue) : \(port)")
+        print("Initialised with \(name) : \(type.rawValue) : \(host) : \(port)")
     }
 }

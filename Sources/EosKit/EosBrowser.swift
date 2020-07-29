@@ -3,7 +3,7 @@
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
-//  Copyright © 2020 Sam Smallman. https://github.com/SammyTheHand
+//  Copyright © 2020 Sam Smallman. https://github.com/SammySmallman
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,7 @@ public final class EosBrowser {
         self.name = name
         self.port = port
         server.port = port
+        server.reusePort = true
         if let interfaces = interfaces, !interfaces.isEmpty {
             // Create OSCClients for each given interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
@@ -129,7 +130,7 @@ public final class EosBrowser {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-        guard message.addressPattern == replyAddressPattern, message.arguments.count == 2 else { return }
+        guard message.addressPattern == replyAddressPattern, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
         // Get the consoles receive port.
         guard let consolePort = message.arguments[0] as? NSNumber else { return }
         // Get the consoles name and type.
@@ -143,7 +144,7 @@ extension EosBrowser: OSCPacketDestination {
         let typeString = String(typeWithBrackets.dropFirst().dropLast())
         let type = EosConsole.ConsoleType(rawValue: typeString) ?? .unknown
         
-        let console = EosConsole(name: name, type: type, port: UInt16(exactly: consolePort) ?? 3032)
+        let console = EosConsole(name: name, type: type, host: host, port: UInt16(exactly: consolePort) ?? 3032)
         delegate?.browser(self, didFindConsole: console)
     }
     

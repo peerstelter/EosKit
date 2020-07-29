@@ -3,7 +3,7 @@
 //  EosKit
 //
 //  Created by Sam Smallman on 16/05/2020.
-//  Copyright © 2020 Sam Smallman. https://github.com/SammyTheHand
+//  Copyright © 2020 Sam Smallman. https://github.com/SammySmallman
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
