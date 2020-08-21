@@ -30,13 +30,14 @@ import NetUtils
 
 public protocol EosBrowserDelegate {
     func browser(_ browser: EosBrowser, didFindConsole console: EosConsole)
+    func browser(_ browser: EosBrowser, didLooseConsole console: EosConsole)
 }
 
 public final class EosBrowser {
     
     private lazy var request = OSCMessage(with: requestAddressPattern, arguments: [port, name])
-    private var servers: [OSCServer] = []
-    private var clients: [OSCClient] = []
+    private var servers: [(server: OSCServer, client: OSCClient)] = []
+    private var consoles: [String: [(console: EosConsole, heartbeat: Timer)]] = [:]
     private var refreshTimer: Timer?
     private let port: UInt16
     private let name: String
@@ -57,39 +58,37 @@ public final class EosBrowser {
             // Create an OSCClients and an OSCServers for each given interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
                 if let address = interface.address, interfaces.contains(address) {
-                    clients.append(client(with: interface))
-                    servers.append(server(with: interface, port: port))
+                    servers.append((server: server(with: interface, port: port), client: client(with: interface)))
                     continue
                 }
                 if interfaces.contains(interface.name) {
-                    clients.append(client(with: interface))
-                    servers.append(server(with: interface, port: port))
+                    servers.append((server: server(with: interface, port: port), client: client(with: interface)))
                     continue
                 }
             }
         } else {
             // Create an OSCClient and an OSCServer for each available interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
-                clients.append(client(with: interface))
-                servers.append(server(with: interface, port: port))
+                servers.append((server: server(with: interface, port: port), client: client(with: interface)))
             }
         }
     }
     
     deinit {
         stop()
-        clients.forEach({ $0.delegate = nil })
-        clients.removeAll()
-        servers.forEach({ $0.delegate = nil })
+        servers.forEach({
+            $0.client.delegate = nil
+            $0.server.delegate = nil
+        })
         servers.removeAll()
     }
     
     /// Start the browser discovering new Eos consoles.
     public func start() {
         servers.forEach({
-            $0.delegate = self
+            $0.server.delegate = self
             do {
-                try $0.startListening()
+                try $0.server.startListening()
             } catch let error as NSError {
                 print(error)
             }
@@ -100,15 +99,15 @@ public final class EosBrowser {
     /// Stop the browser from discovering new Eos consoles.
     public func stop() {
         servers.forEach({
-            $0.stopListening()
-            $0.delegate = nil
+            $0.server.stopListening()
+            $0.server.delegate = nil
         })
         stopRefreshTimer()
     }
     
     @objc func requestConsole(timer: Timer) {
         guard let rTimer = refreshTimer, timer == rTimer, rTimer.isValid else { return }
-        clients.forEach({ $0.send(packet: request) })
+        servers.forEach({ $0.client.send(packet: request) })
     }
     
     private func refresh(every timeInterval: TimeInterval) {
@@ -146,18 +145,9 @@ public final class EosBrowser {
         server.reusePort = true
         return server
     }
-        
     
-}
-
-extension EosBrowser: OSCPacketDestination {
-    
-    public func take(message: OSCMessage) {
-        guard message.addressPattern == replyAddressPattern, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
-        // Get the receive port from the message and check against the servers port. It's very unlikely that these two wouldnt match up.
-        guard let consolePort = message.arguments[0] as? NSNumber, UInt16(exactly:consolePort) == message.replySocket?.port else { return }
-        // Get the consoles name and type.
-        guard let details = message.arguments[1] as? String else { return }
+    private func nameAndType(from message: OSCMessage) -> (name: String, type: EosConsoleType)? {
+        guard let details = message.arguments[1] as? String else { return nil }
         // Console name and type are received within the same argument string e.g. "iMac (ETCnomad)" or "RPU3 (Eos RPU)".
         let typeWithBrackets = details[details.lastIndex(of: "(")!...details.lastIndex(of: ")")!]
         let nameWithSpace = details[details.startIndex..<typeWithBrackets.startIndex]
@@ -166,9 +156,49 @@ extension EosBrowser: OSCPacketDestination {
         // Remove the brackets.
         let typeString = String(typeWithBrackets.dropFirst().dropLast())
         let type = EosConsoleType(rawValue: typeString) ?? .unknown
+        return (name: name, type: type)
+    }
+    
+    
+
+    @objc func heartbeatTimeout(timer: Timer) {
+        // The connection could have disconnected whilst waiting for a response.
+        guard timer.isValid else { return }
         
-        let console = EosConsole(name: name, type: type, interface: interface, host: host)
-        delegate?.browser(self, didFindConsole: console)
+    }
+        
+}
+
+extension EosBrowser: OSCPacketDestination {
+    
+    public func take(message: OSCMessage) {
+        print(message.addressPattern)
+        guard message.addressPattern == replyAddressPattern, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
+        if let foundConsoles = consoles[interface], foundConsoles.contains(where: { $0.console.host == host }) {
+            print("not new console")
+        } else {
+            // MARK: New Console Found
+            
+            // Get the receive port from the message. This will most likely be 3032.
+            guard let consolePort = message.arguments[0] as? NSNumber, let port = UInt16(exactly: consolePort) else { return }
+
+            // Get the name and console type from the message.
+            guard let nameAndType = nameAndType(from: message) else { return }
+            
+            let console = EosConsole(name: nameAndType.name, type: nameAndType.type, interface: interface, host: host, port: port)
+            
+            let heartbeat = Timer(timeInterval: EosConsoleHeartbeatFailureInterval, target: self, selector: #selector(heartbeatTimeout(timer:)), userInfo: nil, repeats: false)
+//            RunLoop.current.add(heartbeat, forMode: .common)
+            
+            if var interfacesConsoles = consoles[interface] {
+                interfacesConsoles.append((console: console, heartbeat: heartbeat))
+            } else {
+                consoles[interface] = [(console: console, heartbeat: heartbeat)]
+            }
+            
+            delegate?.browser(self, didFindConsole: console)
+        }
+        
     }
     
     public func take(bundle: OSCBundle) {

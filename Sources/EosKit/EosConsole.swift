@@ -60,7 +60,7 @@ public enum EosConsoleType: String {
     case unknown
 }
 
-public final class EosConsole: NSObject {
+public final class EosConsole: NSObject, Identifiable {
     
     /// The current state of the console.
     ///
@@ -77,22 +77,23 @@ public final class EosConsole: NSObject {
     public let type: EosConsoleType
     public let interface: String
     public let host: String
-    public let port: UInt16 = 3032
+    public let port: UInt16
     
     public var isConnected: Bool { get { return client.isConnected } }
     public var delegate: EosConsoleDelegate?
     
-    public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String) {
+    public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
         self.type = type
         self.interface = interface
         self.host = host
-        client.delegate = self
+        self.port = port
         client.useTCP = true
         print("Initialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
     }
     
     func connect() -> Bool {
+        client.delegate = self
         do {
             try client.connect()
             return true
@@ -103,6 +104,7 @@ public final class EosConsole: NSObject {
     
     func disconnect() {
         client.disconnect()
+        client.delegate = nil
     }
     
     // MARK:- Heartbeat
@@ -171,7 +173,7 @@ public final class EosConsole: NSObject {
 //            let annotation = OSCAnnotation.annotation(for: message, with: .spaces, andType: true)
 //            os_log("Sent: %{PUBLIC}@", log: .client, type: .info, annotation)
 //        }
-        client.send(packet: message)
+//        client.send(packet: message)
     }
     
 }
