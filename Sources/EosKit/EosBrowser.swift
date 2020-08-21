@@ -29,14 +29,14 @@ import OSCKit
 import NetUtils
 
 public protocol EosBrowserDelegate {
-    func browser(_: EosBrowser, didFindConsole console: EosConsole)
+    func browser(_ browser: EosBrowser, didFindConsole console: EosConsole)
 }
 
 public final class EosBrowser {
     
-    private lazy var request = OSCMessage(messageWithAddressPattern: requestAddressPattern, arguments: [port, name])
+    private lazy var request = OSCMessage(with: requestAddressPattern, arguments: [port, name])
+    private var servers: [OSCServer] = []
     private var clients: [OSCClient] = []
-    private let server = OSCServer()
     private var refreshTimer: Timer?
     private let port: UInt16
     private let name: String
@@ -53,47 +53,57 @@ public final class EosBrowser {
     public init(name: String = "EosKit", port: UInt16 = 3035, interfaces: [String]? = nil) {
         self.name = name
         self.port = port
-        server.port = port
-        server.reusePort = true
         if let interfaces = interfaces, !interfaces.isEmpty {
-            // Create OSCClients for each given interface.
+            // Create an OSCClients and an OSCServers for each given interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
                 if let address = interface.address, interfaces.contains(address) {
                     clients.append(client(with: interface))
+                    servers.append(server(with: interface, port: port))
                     continue
                 }
                 if interfaces.contains(interface.name) {
                     clients.append(client(with: interface))
+                    servers.append(server(with: interface, port: port))
                     continue
                 }
             }
         } else {
-            // Create OSCClients for all available interfaces.
+            // Create an OSCClient and an OSCServer for each available interface.
             for interface in Interface.allInterfaces() where interface.broadcastAddress != nil && interface.family == .ipv4 {
                 clients.append(client(with: interface))
+                servers.append(server(with: interface, port: port))
             }
         }
     }
     
     deinit {
         stop()
+        clients.forEach({ $0.delegate = nil })
+        clients.removeAll()
+        servers.forEach({ $0.delegate = nil })
+        servers.removeAll()
     }
     
+    /// Start the browser discovering new Eos consoles.
     public func start() {
-        server.delegate = self
-        do {
-            try server.startListening()
-        } catch let error as NSError {
-            print(error)
-        }
+        servers.forEach({
+            $0.delegate = self
+            do {
+                try $0.startListening()
+            } catch let error as NSError {
+                print(error)
+            }
+        })
         refresh(every: 3)
     }
     
+    /// Stop the browser from discovering new Eos consoles.
     public func stop() {
-        server.stopListening()
-        server.delegate = nil
+        servers.forEach({
+            $0.stopListening()
+            $0.delegate = nil
+        })
         stopRefreshTimer()
-        clients.removeAll()
     }
     
     @objc func requestConsole(timer: Timer) {
@@ -125,14 +135,27 @@ public final class EosBrowser {
         return client
     }
     
+    /// Creates an `OSCServer` configured to receive broadcast discovery responses messages on a given interface and port.
+    ///
+    /// - Parameter interface:  An Interface the OSC Server will listen on.
+    /// - Parameter port:       The port the server will bind to.
+    private func server(with interface: Interface, port: UInt16 = 3035) -> OSCServer {
+        let server = OSCServer()
+        server.port = port
+        server.interface = interface.name
+        server.reusePort = true
+        return server
+    }
+        
+    
 }
 
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-        guard message.addressPattern == replyAddressPattern, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
-        // Get the consoles receive port.
-        guard let consolePort = message.arguments[0] as? NSNumber else { return }
+        guard message.addressPattern == replyAddressPattern, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
+        // Get the receive port from the message and check against the servers port. It's very unlikely that these two wouldnt match up.
+        guard let consolePort = message.arguments[0] as? NSNumber, UInt16(exactly:consolePort) == message.replySocket?.port else { return }
         // Get the consoles name and type.
         guard let details = message.arguments[1] as? String else { return }
         // Console name and type are received within the same argument string e.g. "iMac (ETCnomad)" or "RPU3 (Eos RPU)".
@@ -142,9 +165,9 @@ extension EosBrowser: OSCPacketDestination {
         let name = String(nameWithSpace.dropLast())
         // Remove the brackets.
         let typeString = String(typeWithBrackets.dropFirst().dropLast())
-        let type = EosConsole.ConsoleType(rawValue: typeString) ?? .unknown
+        let type = EosConsoleType(rawValue: typeString) ?? .unknown
         
-        let console = EosConsole(name: name, type: type, host: host, port: UInt16(exactly: consolePort) ?? 3032)
+        let console = EosConsole(name: name, type: type, interface: interface, host: host)
         delegate?.browser(self, didFindConsole: console)
     }
     

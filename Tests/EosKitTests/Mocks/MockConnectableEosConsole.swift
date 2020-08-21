@@ -1,5 +1,5 @@
 //
-//  MockDiscoverableEosConsole.swift
+//  MockConnectableEosConsole.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 16/05/2020.
@@ -29,25 +29,26 @@ import XCTest
 import OSCKit
 @testable import EosKit
 
-
-class MockDiscoverableEosConsole {
+class MockConnectableEosConsole {
     
     private let name: String
     private let type: EosConsole.ConsoleType
     private let port: UInt16
+    private let interface: String?
     private let server = OSCServer()
     
-    /// A mock console discoverable over a network.
+    /// A mock console connectable over a network.
     ///
     /// - Parameter name: A name for the console.
     /// - Parameter type: The type of console (e.g. `.eos` or `.ion`).
-    /// - Parameter port: The port the mock Eos consoles should receive discovery messages on.
-    ///                   Eos consoles receive discovery messages on port 3034.
-    init(name: String = "EosKit", type: EosConsole.ConsoleType = .eos, port: UInt16 = 3034, interface: String? = nil) {
+    /// - Parameter port: The port the mock Eos consoles should be connectable on.
+    ///                   Eos consoles can be connected to via TCP on port 3032.
+    init(name: String = "EosKit", type: EosConsole.ConsoleType = .eos, port: UInt16 = 3032, interface: String? = nil) {
         self.name = name
         self.type = type
         self.port = port
-        server.port = 3034
+        server.port = port
+        self.interface = interface
         if let i = interface {
             server.interface = i
         }
@@ -68,13 +69,10 @@ class MockDiscoverableEosConsole {
     }
 }
 
-extension MockDiscoverableEosConsole: OSCPacketDestination {
+extension MockConnectableEosConsole: OSCPacketDestination {
+    
     func take(message: OSCMessage) {
-        guard let replyHost = message.replySocket?.host, let replyPort = message.arguments[0] as? Int32, message.addressPattern == requestAddressPattern else { return }
-        let client = OSCClient()
-        client.host = replyHost
-        client.port = UInt16(exactly: replyPort) ?? 3035
-        client.send(packet: OSCMessage(with: replyAddressPattern, arguments: [replyPort, "\(name) (\(type.rawValue))"]))
+        return
     }
     
     func take(bundle: OSCBundle) {

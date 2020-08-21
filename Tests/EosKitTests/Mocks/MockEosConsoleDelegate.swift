@@ -1,8 +1,8 @@
 //
-//  EosBrowser.swift
+//  MockEosConsoleDelegate.swift
 //  EosKit
 //
-//  Created by Sam Smallman on 12/05/2020.
+//  Created by Sam Smallman on 16/05/2020.
 //  Copyright © 2020 Sam Smallman. https://github.com/SammySmallman
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,22 +22,46 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
+//
 
 import Foundation
+import XCTest
 import OSCKit
+@testable import EosKit
 
-internal typealias EosKitCompletionHandler = (OSCMessage) -> Void
+internal final class MockEosConsoleDelegate: EosConsoleDelegate {
 
-// MARK:- Heartbeat
-let EosConsoleHeartbeatMaxAttempts: Int = 5
-let EosConsoleHeartbeatInterval: TimeInterval = 5
-let EosConsoleHeartbeatFailureInterval: TimeInterval = 1
-
-// MARK:- OSC Address Patterns
-internal let requestAddressPattern = "/etc/discovery/request"
-internal let replyAddressPattern = "/etc/discovery/reply"
-internal let eosReplyPrefix = "/eos/out"
-internal let pingRequest = "/eos/ping"
-internal let pingReply = "/eos/out/ping"
-
-
+    internal typealias handler = (EosConsole) -> Void
+    
+    private let consoleDidConnectCallback: handler?
+    private let consoleDidDisconnectCallback: handler?
+    
+    init(callback: @escaping handler) {
+        self.callback = callback
+    }
+    
+    func consoleDidConnect(_ console: EosConsole) {
+        if let callback = consoleDidConnectCallback {
+            callback(console)
+        }
+    }
+    
+    func consoleDidDisconnect(_ console: EosConsole) {
+        if let callback = consoleDidConnectCallback {
+            callback(console)
+        }
+    }
+    
+    func console(_ console: EosConsole, didMakeFirstContact contact: Bool) {
+        callback(console)
+    }
+    
+    func consoleDidLooseContact(_ console: EosConsole) {
+        callback(console)
+    }
+    
+    func console(_ console: EosConsole, didReceiveUndefinedMessage message: String) {
+        callback(console)
+    }
+    
+}

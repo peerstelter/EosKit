@@ -1,5 +1,5 @@
 //
-//  EosBrowser.swift
+//  OSCMessage.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -22,22 +22,21 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
+//
 
 import Foundation
 import OSCKit
 
-internal typealias EosKitCompletionHandler = (OSCMessage) -> Void
+extension OSCMessage {
+    
+    internal func isHeartbeat(with uuid: UUID) -> Bool {
+        guard self.addressPattern == pingReply,
+              self.arguments.count == 2,
+              let argument1 = self.arguments[0] as? String,
+              let argument2 = self.arguments[1] as? String else { return false }
+        return argument1 == "EosKit Heartbeat" && uuid.uuidString == argument2
+    }
+    
+    internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix)} }
 
-// MARK:- Heartbeat
-let EosConsoleHeartbeatMaxAttempts: Int = 5
-let EosConsoleHeartbeatInterval: TimeInterval = 5
-let EosConsoleHeartbeatFailureInterval: TimeInterval = 1
-
-// MARK:- OSC Address Patterns
-internal let requestAddressPattern = "/etc/discovery/request"
-internal let replyAddressPattern = "/etc/discovery/reply"
-internal let eosReplyPrefix = "/eos/out"
-internal let pingRequest = "/eos/ping"
-internal let pingReply = "/eos/out/ping"
-
-
+}

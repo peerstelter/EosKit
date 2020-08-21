@@ -98,6 +98,10 @@ final class EosBrowserTests: XCTestCase {
     }
     
     func testConsoleInfo() {
+        
+        let interface = Interface.allInterfaces().first(where: { $0.family == .ipv4 && $0.broadcastAddress != nil })
+        browser = EosBrowser(interfaces: [interface!.address!])
+        
         weak var promise = expectation(description: "The console info does not match expectations.")
         let name = "Test"
         let type = EosConsole.ConsoleType.ion
@@ -106,7 +110,7 @@ final class EosBrowserTests: XCTestCase {
         console?.start()
         
         let mock = MockEosBrowserDelegate(callback: { console in
-            if console.name == name && console.type == type {
+            if console.name == name && console.type == type && console.interface == interface?.name {
                 promise?.fulfill()
                 promise = nil
             }
