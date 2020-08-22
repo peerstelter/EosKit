@@ -38,7 +38,7 @@ public final class EosBrowser {
     private lazy var request = OSCMessage(with: requestAddressPattern, arguments: [port, name])
     private var discoveringInterfaces: [(server: OSCServer, client: OSCClient)] = []
     private var consoles: [String: [(console: EosConsole, heartbeat: Timer)]] = [:]
-    private var refreshTimer: Timer?
+    private var discoveryTimer: Timer?
     private let port: UInt16
     private let name: String
     
@@ -105,33 +105,25 @@ public final class EosBrowser {
             $0.server.stopListening()
             $0.server.delegate = nil
         })
-        stopRefreshTimer()
+        stopDiscoveryTimer()
     }
     
     @objc func requestConsole(timer: Timer) {
-        guard let rTimer = refreshTimer, timer == rTimer, rTimer.isValid else { return }
-        discoveringInterfaces.forEach({
-            // After each packet is sent the UDP socket gets closed and the broadcast flag doesn't get set again as we don't assign
-            // the host adddress after the initialising of the client. (If you set the host address after the interface on a client, it will automatically check if it's a broadcast address and set the flag for you)
-            // We could just set the host address again on the client which would check whether its a broadcast address and set the flag accordingly.
-            // But it's probably clearer to just set the broadcast flag ourselves.
-            // It will still do the checks but doesn't hide the functionality by the host address property.
-            $0.client.setBroadcastFlag()
-            $0.client.send(packet: request)
-        })
+        guard let rTimer = discoveryTimer, timer == rTimer, rTimer.isValid else { return }
+        discoveringInterfaces.forEach({ $0.client.send(packet: request) })
     }
     
     private func refresh(every timeInterval: TimeInterval) {
-        if refreshTimer == nil {
-            refreshTimer = Timer(timeInterval: timeInterval, target: self, selector: #selector(requestConsole(timer:)), userInfo: nil, repeats: true)
-            refreshTimer!.tolerance = timeInterval * 0.1
-            RunLoop.current.add(refreshTimer!, forMode: .common)
+        if discoveryTimer == nil {
+            discoveryTimer = Timer(timeInterval: timeInterval, target: self, selector: #selector(requestConsole(timer:)), userInfo: nil, repeats: true)
+            discoveryTimer!.tolerance = timeInterval * 0.1
+            RunLoop.current.add(discoveryTimer!, forMode: .common)
         }
     }
     
-    private func stopRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+    private func stopDiscoveryTimer() {
+        discoveryTimer?.invalidate()
+        discoveryTimer = nil
     }
     
     /// Creates an `OSCClient` configured to broadcast discovery request messages on a given interface.
