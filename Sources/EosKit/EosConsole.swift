@@ -92,6 +92,10 @@ public final class EosConsole: NSObject, Identifiable {
         print("Initialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
     }
     
+    deinit {
+        print("Deinitialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
+    }
+    
     func connect() -> Bool {
         client.delegate = self
         do {
