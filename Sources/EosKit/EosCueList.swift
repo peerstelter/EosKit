@@ -1,5 +1,5 @@
 //
-//  EosBrowser.swift
+//  EosCueList.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -22,21 +22,10 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
+//
 
 import Foundation
-import OSCKit
 
-internal typealias EosKitCompletionHandler = (OSCMessage) -> Void
-
-// MARK:- Heartbeat
-internal let EosConsoleHeartbeatMaxAttempts: Int = 3
-internal let EosConsoleHeartbeatInterval: TimeInterval = 5
-internal let EosConsoleHeartbeatFailureInterval: TimeInterval = 1
-internal let eosHeartbeatString = "EosKit Heartbeat"
-
-// MARK:- OSC Address Patterns
-internal let eosDiscoveryRequest = "/etc/discovery/request"
-internal let eosDiscoveryReply = "/etc/discovery/reply"
-internal let eosRequestPrefix = "/eos"
-internal let eosReplyPrefix = "/eos/out"
-internal let eosPingRequest = "/ping"
+class EosCueList {
+    
+}

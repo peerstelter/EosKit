@@ -75,9 +75,9 @@ public final class EosConsole: NSObject, Identifiable {
     
     public let name: String
     public let type: EosConsoleType
-    public let interface: String
-    public let host: String
-    public let port: UInt16
+    private(set) var interface: String { get { client.interface ?? "" } set { client.interface = newValue } }
+    private(set) var host: String { get { client.host ?? "localhost" } set { client.host = newValue } }
+    private(set) var port: UInt16 { get { client.port } set { client.port = newValue } }
     
     public var isConnected: Bool { get { return client.isConnected } }
     public var delegate: EosConsoleDelegate?
@@ -85,10 +85,10 @@ public final class EosConsole: NSObject, Identifiable {
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
         self.type = type
-        self.interface = interface
-        self.host = host
-        self.port = port
+        client.host = host
+        client.port = port
         client.useTCP = true
+        client.streamFraming = .SLIP
         print("Initialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
     }
     
@@ -96,7 +96,7 @@ public final class EosConsole: NSObject, Identifiable {
         print("Deinitialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
     }
     
-    func connect() -> Bool {
+    public func connect() -> Bool {
         client.delegate = self
         do {
             try client.connect()
@@ -106,7 +106,7 @@ public final class EosConsole: NSObject, Identifiable {
         }
     }
     
-    func disconnect() {
+    public func disconnect() {
         client.disconnect()
         client.delegate = nil
     }
@@ -135,12 +135,16 @@ public final class EosConsole: NSObject, Identifiable {
     }
     
     @objc func sendHeartbeat() {
-        sendMessage(with: pingRequest, arguments:  ["EosKit Heartbeat", uuid.uuidString], completionHandler: { [weak self] data in
-            guard let strongSelf = self else { return }
+        sendMessage(with: eosPingRequest, arguments:  [eosHeartbeatString, uuid.uuidString], completionHandler: { [weak self] message in
             
-            guard strongSelf.heartbeats > -1 else { return }
+            guard let strongSelf = self, strongSelf.heartbeats > -1 else { return }
             strongSelf.clearHeartbeatTimeout()
+            
             guard strongSelf.state != .disconnected && strongSelf.client.isConnected else { return }
+            
+            if message.isHeartbeat(with: strongSelf.uuid), strongSelf.state != .responsive {
+                strongSelf.state = .responsive
+            }
             
             strongSelf.perform(#selector(strongSelf.sendHeartbeat), with: nil, afterDelay: EosConsoleHeartbeatInterval)
         })
@@ -152,32 +156,21 @@ public final class EosConsole: NSObject, Identifiable {
     @objc func heartbeatTimeout(timer: Timer) {
         // The connection could have disconnected whilst waiting for a response.
         guard timer.isValid, heartbeats != -1, state != .disconnected || state != .unknown else { return }
-        
-        // If the timer fires before we receive a response from the hearbeat and we have attempts left, try sending again.
-        if heartbeats < EosConsoleHeartbeatMaxAttempts {
-            heartbeats += 1
-            sendHeartbeat()
-        } else {
-//            os_log("No Heartbeat...", log: .timeline, type: .info)
+        if state != .unresponsive {
             state = .unresponsive
         }
+        sendHeartbeat()
     }
     
     // Optional parameters within a closure are escaping by default.
-    private func sendMessage(with addressPattern: String, arguments: [Any], timeline: Bool = true, completionHandler: EosKitCompletionHandler? = nil) {
+    private func sendMessage(with addressPattern: String, arguments: [Any], completionHandler: EosKitCompletionHandler? = nil) {
         if let handler = completionHandler {
-//            os_log("Adding completion handler for: %{PUBLIC}@", log: .client, type: .info, addressPattern)
-            self.completionHandlers[addressPattern] = handler
+            if !completionHandlers.keys.contains(addressPattern) {
+                self.completionHandlers[addressPattern] = handler
+            }
         }
-//        let fullAddress = timeline && delegate != nil ? "\(timelinePrefix)\(addressPattern)" : addressPattern
-//        let message = OSCMessage(messageWithAddressPattern: fullAddress, arguments: arguments)
-//        message.readdress(to: message.addressPattern(withApplication: true))
-//
-//        if message.addressPattern != "/stamp/timelines" {
-//            let annotation = OSCAnnotation.annotation(for: message, with: .spaces, andType: true)
-//            os_log("Sent: %{PUBLIC}@", log: .client, type: .info, annotation)
-//        }
-//        client.send(packet: message)
+        let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
+        client.send(packet: message)
     }
     
 }
@@ -191,9 +184,11 @@ extension EosConsole: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
         if message.isEosReply {
-            if message.isHeartbeat(with: uuid) && state == .unresponsive {
-                state = .responsive
-            }
+            let relativeAddress = message.addressWithoutEosReply()
+            message.readdress(to: relativeAddress)
+            guard let completionHandler = completionHandlers[relativeAddress] else { return }
+            completionHandlers.removeValue(forKey: relativeAddress)            
+            completionHandler(message)
         } else {
             delegate?.console(self, didReceiveUndefinedMessage: OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         }

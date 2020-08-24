@@ -27,10 +27,8 @@ final class EosConsoleTests: XCTestCase {
         
         console = EosConsole(name: "EosKit", type: .eos, host: interface!.address!)
         
-        let mock = MockEosConsoleDelegate(callback: { console in
-                promise?.fulfill()
-                promise = nil
-        })
+        let mock = MockEosConsoleDelegate()
+        
         console!.delegate = mock
         _ = console!.connect()
         

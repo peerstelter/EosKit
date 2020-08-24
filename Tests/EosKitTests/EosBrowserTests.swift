@@ -104,12 +104,13 @@ final class EosBrowserTests: XCTestCase {
         
         weak var promise = expectation(description: "The console info does not match expectations.")
         let name = "Test"
-        let type = EosConsole.ConsoleType.ion
+        let type = EosConsoleType.ion
         
         console = MockDiscoverableEosConsole(name: name, type: type)
         console?.start()
         
         let mock = MockEosBrowserDelegate(callback: { console in
+            print(console.name)
             if console.name == name && console.type == type && console.interface == interface?.name {
                 promise?.fulfill()
                 promise = nil

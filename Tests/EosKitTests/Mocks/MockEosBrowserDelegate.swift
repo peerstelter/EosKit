@@ -33,15 +33,20 @@ internal final class MockEosBrowserDelegate: EosBrowserDelegate {
 
     internal typealias handler = (EosConsole) -> Void
     
-    internal var consoles: [EosConsole] = []
+    internal var consoles: Set<EosConsole> = []
     private let callback: handler
     
     init(callback: @escaping handler) {
         self.callback = callback
     }
     
-    func browser(_: EosBrowser, didFindConsole console: EosConsole) {
-        consoles.append(console)
+    func browser(_ browser: EosBrowser, didFindConsole console: EosConsole) {
+        consoles.insert(console)
+        callback(console)
+    }
+    
+    func browser(_ browser: EosBrowser, didLooseConsole console: EosConsole) {
+        consoles.remove(console)
         callback(console)
     }
     

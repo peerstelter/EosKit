@@ -33,12 +33,11 @@ internal final class MockEosConsoleDelegate: EosConsoleDelegate {
 
     internal typealias handler = (EosConsole) -> Void
     
-    private let consoleDidConnectCallback: handler?
-    private let consoleDidDisconnectCallback: handler?
+    internal var consoleDidConnectCallback: handler? = nil
+    internal var consoleDidDisconnectCallback: handler? = nil
+    internal var consoleDidUpdateStatetCallback: handler? = nil
+    internal var consoleDidReceiveUndefinedMessageCallback: handler? = nil
     
-    init(callback: @escaping handler) {
-        self.callback = callback
-    }
     
     func consoleDidConnect(_ console: EosConsole) {
         if let callback = consoleDidConnectCallback {
@@ -52,16 +51,17 @@ internal final class MockEosConsoleDelegate: EosConsoleDelegate {
         }
     }
     
-    func console(_ console: EosConsole, didMakeFirstContact contact: Bool) {
-        callback(console)
-    }
-    
-    func consoleDidLooseContact(_ console: EosConsole) {
-        callback(console)
+    func console(_ console: EosConsole, didUpdateState state: EosConsoleState) {
+        if let callback = consoleDidUpdateStatetCallback {
+            callback(console)
+        }
     }
     
     func console(_ console: EosConsole, didReceiveUndefinedMessage message: String) {
-        callback(console)
+        if let callback = consoleDidReceiveUndefinedMessageCallback {
+            callback(console)
+        }
     }
+
     
 }

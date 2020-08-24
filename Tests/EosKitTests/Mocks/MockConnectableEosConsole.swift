@@ -32,7 +32,7 @@ import OSCKit
 class MockConnectableEosConsole {
     
     private let name: String
-    private let type: EosConsole.ConsoleType
+    private let type: EosConsoleType
     private let port: UInt16
     private let interface: String?
     private let server = OSCServer()
@@ -43,7 +43,7 @@ class MockConnectableEosConsole {
     /// - Parameter type: The type of console (e.g. `.eos` or `.ion`).
     /// - Parameter port: The port the mock Eos consoles should be connectable on.
     ///                   Eos consoles can be connected to via TCP on port 3032.
-    init(name: String = "EosKit", type: EosConsole.ConsoleType = .eos, port: UInt16 = 3032, interface: String? = nil) {
+    init(name: String = "EosKit", type: EosConsoleType = .eos, port: UInt16 = 3032, interface: String? = nil) {
         self.name = name
         self.type = type
         self.port = port

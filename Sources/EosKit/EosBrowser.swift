@@ -35,7 +35,7 @@ public protocol EosBrowserDelegate {
 
 public final class EosBrowser {
     
-    private lazy var request = OSCMessage(with: requestAddressPattern, arguments: [port, name])
+    private lazy var request = OSCMessage(with: eosDiscoveryRequest, arguments: [port, name])
     private var discoveringInterfaces: [(server: OSCServer, client: OSCClient)] = []
     private var consoles: [String: [(console: EosConsole, heartbeat: Timer)]] = [:]
     private var discoveryTimer: Timer?
@@ -185,10 +185,10 @@ public final class EosBrowser {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-        guard message.addressPattern == replyAddressPattern, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
+        guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
         if var foundConsoles = consoles[interface], let index = foundConsoles.firstIndex(where: { $0.console.host == host }) {
             // MARK: Console Still Online
-            print("Still Online: \(interface) : \(host)")
+//            print("Still Online: \(interface) : \(host)")
             foundConsoles[index].heartbeat.invalidate()
             let heartbeat = Timer(timeInterval: 5, target: self, selector: #selector(heartbeatTimeout(timer:)), userInfo: ["interface": interface, "host" : host], repeats: false)
             foundConsoles[index].heartbeat = heartbeat

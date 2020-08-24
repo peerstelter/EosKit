@@ -22,14 +22,14 @@ case unknown
     
     func testInits() {
 
-        let ETCNomad = EosConsole.ConsoleType(rawValue: "ETCnomad")
-        XCTAssertEqual(ETCNomad, EosConsole.ConsoleType.nomad)
+        let ETCNomad = EosConsoleType(rawValue: "ETCnomad")
+        XCTAssertEqual(ETCNomad, EosConsoleType.nomad)
         
-        let ETCNomad_Puck = EosConsole.ConsoleType(rawValue: "ETCnomad Puck")
-        XCTAssertEqual(ETCNomad_Puck, EosConsole.ConsoleType.nomadPuck)
+        let ETCNomad_Puck = EosConsoleType(rawValue: "ETCnomad Puck")
+        XCTAssertEqual(ETCNomad_Puck,EosConsoleType.nomadPuck)
         
-        let unknown = EosConsole.ConsoleType(rawValue: "unknown")
-        XCTAssertEqual(unknown, EosConsole.ConsoleType.unknown)
+        let unknown = EosConsoleType(rawValue: "unknown")
+        XCTAssertEqual(unknown, EosConsoleType.unknown)
         
     }
 

@@ -33,7 +33,7 @@ import OSCKit
 class MockDiscoverableEosConsole {
     
     private let name: String
-    private let type: EosConsole.ConsoleType
+    private let type: EosConsoleType
     private let port: UInt16
     private let server = OSCServer()
     
@@ -43,7 +43,7 @@ class MockDiscoverableEosConsole {
     /// - Parameter type: The type of console (e.g. `.eos` or `.ion`).
     /// - Parameter port: The port the mock Eos consoles should receive discovery messages on.
     ///                   Eos consoles receive discovery messages on port 3034.
-    init(name: String = "EosKit", type: EosConsole.ConsoleType = .eos, port: UInt16 = 3034, interface: String? = nil) {
+    init(name: String = "EosKit", type: EosConsoleType = .eos, port: UInt16 = 3034, interface: String? = nil) {
         self.name = name
         self.type = type
         self.port = port
@@ -70,11 +70,11 @@ class MockDiscoverableEosConsole {
 
 extension MockDiscoverableEosConsole: OSCPacketDestination {
     func take(message: OSCMessage) {
-        guard let replyHost = message.replySocket?.host, let replyPort = message.arguments[0] as? Int32, message.addressPattern == requestAddressPattern else { return }
+        guard let replyHost = message.replySocket?.host, let replyPort = message.arguments[0] as? Int32, message.addressPattern == eosDiscoveryRequest else { return }
         let client = OSCClient()
         client.host = replyHost
         client.port = UInt16(exactly: replyPort) ?? 3035
-        client.send(packet: OSCMessage(with: replyAddressPattern, arguments: [replyPort, "\(name) (\(type.rawValue))"]))
+        client.send(packet: OSCMessage(with: eosDiscoveryReply, arguments: [replyPort, "\(name) (\(type.rawValue))"]))
     }
     
     func take(bundle: OSCBundle) {

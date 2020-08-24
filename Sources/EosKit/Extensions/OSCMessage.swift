@@ -29,14 +29,49 @@ import OSCKit
 
 extension OSCMessage {
     
+    internal class var ping: OSCMessage { return Cache.EosPing }
+    internal class var reset: OSCMessage { return Cache.EosReset }
+    internal class var version: OSCMessage { return Cache.EosVersion }
+    internal class var filter: OSCMessage { return Cache.EosFilter }
+    internal class var EosListCount: OSCMessage { return Cache.EosListCount }
+    
+    private struct Cache {
+        static let EosPing = OSCMessage(with: "/eos/ping", arguments: [])
+        static let EosReset = OSCMessage(with: "/eos/reset", arguments: [])
+        static let EosVersion = OSCMessage(with: "/eos/get/version", arguments: [])
+        static let EosListCount = OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
+        static let EosFilter = OSCMessage(with: "/eos/filter/add",
+                                       arguments: ["/eos/out/get/version",
+                                                   "/eos/out/get/cuelist/count",
+                                                   "/eos/out/get/cuelist/*/list/*/*",
+                                                   "/eos/out/get/cuelist/*/links/list/*/*",
+                                                   "/eos/out/get/cue/*/noparts/count",
+                                                   "/eos/out/get/cue/*/*/noparts/list/*/*",
+                                                   "/eos/out/get/cue/*/*/noparts/fx/list/*/*",
+                                                   "/eos/out/get/cue/*/*/noparts/links/list/*/*",
+                                                   "/eos/out/get/cue/*/*/noparts/actions/list/*/*",
+                                                   "/eos/out/get/cue/*/*/count",
+                                                   "/eos/out/get/cue/*/*/*/list/*/*",
+                                                   "/eos/out/get/cue/*/*/*/fx/list/*/*",
+                                                   "/eos/out/get/cue/*/*/*/links/list/*/*",
+                                                   "/eos/out/get/cue/*/*/*/actions/list/*/*",
+                                                   "/eos/out/event/cue/*/*/fire"])
+    }
+    
     internal func isHeartbeat(with uuid: UUID) -> Bool {
-        guard self.addressPattern == pingReply,
+        guard self.addressPattern == eosPingRequest,
               self.arguments.count == 2,
               let argument1 = self.arguments[0] as? String,
               let argument2 = self.arguments[1] as? String else { return false }
-        return argument1 == "EosKit Heartbeat" && uuid.uuidString == argument2
+        return argument1 == eosHeartbeatString && uuid.uuidString == argument2
     }
     
     internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix)} }
+    
+    internal func addressWithoutEosReply() -> String {
+        let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosReplyPrefix.count)
+        return String(self.addressPattern[startIndex...])
+    }
+
 
 }
