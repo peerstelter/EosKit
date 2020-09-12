@@ -137,7 +137,7 @@ public final class EosBrowser {
         return client
     }
     
-    /// Creates an `OSCServer` configured to receive broadcast discovery responses messages on a given interface and port.
+    /// Creates an `OSCServer` configured to receive broadcast discovery reply messages on a given interface and port.
     ///
     /// - Parameter interface:  An Interface the OSC Server will listen on.
     /// - Parameter port:       The port the server will bind to.
@@ -185,6 +185,7 @@ public final class EosBrowser {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
+        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
         if var foundConsoles = consoles[interface], let index = foundConsoles.firstIndex(where: { $0.console.host == host }) {
             // MARK: Console Still Online
@@ -221,7 +222,8 @@ extension EosBrowser: OSCPacketDestination {
     }
     
     public func take(bundle: OSCBundle) {
-        print(bundle.elements.count)
+        // An eos family console doesn't send any OSC Bundles. It DOES? receive them though!
+        return
     }
     
 }

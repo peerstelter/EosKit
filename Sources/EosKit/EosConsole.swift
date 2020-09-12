@@ -26,7 +26,6 @@
 
 import Foundation
 import OSCKit
-import CoreBluetooth
 
 public protocol EosConsoleDelegate {
     func console(_ console: EosConsole, didUpdateState state: EosConsoleState)
@@ -34,8 +33,7 @@ public protocol EosConsoleDelegate {
 }
 
 /// Represents the current state of an EosConsole.
-/// - Note:
-public enum EosConsoleState : Int {
+public enum EosConsoleState: Int {
     case unknown = 0
     case disconnected = 1
     case connected = 2
@@ -43,6 +41,8 @@ public enum EosConsoleState : Int {
     case responsive = 4
 }
 
+
+/// The type of eos family console the `EosConsole` represents.
 public enum EosConsoleType: String {
     case nomad = "ETCnomad"
     case nomadPuck = "ETCnomad Puck"
@@ -60,18 +60,45 @@ public enum EosConsoleType: String {
     case unknown
 }
 
+public enum EosConsoleOption: Int {
+    case cues
+    case patch
+    
+    var filters: Set<String> {
+        switch self {
+        case .cues:
+            return eosCuesFilters
+        case .patch:
+            return eosPatchFilters
+        }
+    }
+}
+
 public final class EosConsole: NSObject, Identifiable {
     
     /// The current state of the console.
     ///
     /// This state is initially set to `EosConsoleState.unknown`. When the state updates, the console calls its delegate's console(_ console: `EosConsole`, didUpdateState state: `EosConsoleState`) method.
+    /// This state can only be anything other than `EosConsoleState.disconnected` or `EosConsoleState.unknown` if `isConnected` is `true`.
     private(set) public var state: EosConsoleState = .unknown { didSet { delegate?.console(self, didUpdateState: state) }}
+    
+    /// The current optional functionality of the console.
+    ///
+    /// An eos family console can provide information regarding many parts of its systems, for example, cue lists, patch, presets and palettes.
+    /// To request and gain a syncronous data store to parts of the eos family console this options should be inserted with the corresponding `EosConsoleOption`.
+    public var options: Set<EosConsoleOption> = [] { didSet { consoleOptionsDidChange(from: oldValue, to: options) }}
+    
+    /// The current filters applied to the console.
+    ///
+    /// As `options` are changed filters are added and removed to the console to limit the OSC messages to those that are strictly necesary.
+    private(set) public var filters: Set<String> = []
     
     private var completionHandlers: [String : EosKitCompletionHandler] = [:]
     private let client = OSCClient()
     private let uuid = UUID()
     private var heartbeats = -1 // Not running
     private var heartbeatTimer: Timer?
+    private var systemFiltersSent = false
     
     public let name: String
     public let type: EosConsoleType
@@ -79,6 +106,10 @@ public final class EosConsole: NSObject, Identifiable {
     private(set) var host: String { get { client.host ?? "localhost" } set { client.host = newValue } }
     private(set) var port: UInt16 { get { client.port } set { client.port = newValue } }
     
+    /// The current state of the TCP connection.
+    ///
+    /// This state represents the connection of the clients socket tcp connection used by this `EosConsole`.
+    /// It differs from `EosConsoleState` in that it is showing the status of the socket connection and not whether or not OSC communication is currently possible between this `EosConsole` and an eos family console.
     public var isConnected: Bool { get { return client.isConnected } }
     public var delegate: EosConsoleDelegate?
     
@@ -144,6 +175,11 @@ public final class EosConsole: NSObject, Identifiable {
             
             if message.isHeartbeat(with: strongSelf.uuid), strongSelf.state != .responsive {
                 strongSelf.state = .responsive
+                if strongSelf.systemFiltersSent == false {
+                    strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(eosSystemFilters)))
+                    strongSelf.filters = strongSelf.filters.union(eosSystemFilters)
+                    strongSelf.systemFiltersSent = true
+                }
             }
             
             strongSelf.perform(#selector(strongSelf.sendHeartbeat), with: nil, afterDelay: EosConsoleHeartbeatInterval)
@@ -154,7 +190,6 @@ public final class EosConsole: NSObject, Identifiable {
     }
     
     @objc func heartbeatTimeout(timer: Timer) {
-        // The connection could have disconnected whilst waiting for a response.
         guard timer.isValid, heartbeats != -1, state != .disconnected || state != .unknown else { return }
         if state != .unresponsive {
             state = .unresponsive
@@ -162,12 +197,44 @@ public final class EosConsole: NSObject, Identifiable {
         sendHeartbeat()
     }
     
-    // Optional parameters within a closure are escaping by default.
+    // MARK:- Console Options
+    
+    private func consoleOptionsDidChange(from fromOptions: Set<EosConsoleOption>, to toOptions: Set<EosConsoleOption>) {
+        guard state == .responsive else { return }
+        // A completion handler isn't created as eos does not send a reply to filter add and remove messages... It probably should.
+        // TODO: Request eos send replys to /eos/filter/add and /eos/filter/remove.
+        let changes = EosConsoleFilterBuilder.filter(from: fromOptions, to: toOptions)
+        filterWith(changes: changes)
+    }
+    
+    // MARK:- Filter
+    
+    private func filterWith(changes: (add: Set<String>?, remove: Set<String>?)) {
+        switch changes {
+        case (nil, nil): return
+        case (.some(let filtersToAdd), .some(let filtersToRemove)):
+            filters = filters.union(filtersToAdd)
+            filters = filters.subtracting(filtersToRemove)
+            // TODO: Check whether Eos can handle OSC Bundles...
+            // Eos consoles CAN? receive OSCBundles and EosKit sends them to reduce the amount of message sent on the network.
+            // The elements within the OSCBundles are actioned upon synscronously by Eos consoles and reply will be as individual OSCMessages.
+//            client.send(packet: OSCBundle(bundleWithMessages: [OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)),
+//                                                               OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove))]))
+            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)))
+            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove)))
+        case (.some(let filtersToAdd), nil):
+            filters = filters.union(filtersToAdd)
+            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)))
+        case (nil,.some(let filtersToRemove)):
+            filters = filters.subtracting(filtersToRemove)
+            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove)))
+        }
+    }
+    
+    // MARK:- Send OSC Message
     private func sendMessage(with addressPattern: String, arguments: [Any], completionHandler: EosKitCompletionHandler? = nil) {
         if let handler = completionHandler {
-            if !completionHandlers.keys.contains(addressPattern) {
-                self.completionHandlers[addressPattern] = handler
-            }
+            self.completionHandlers[addressPattern] = handler
         }
         let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
         client.send(packet: message)
@@ -175,10 +242,11 @@ public final class EosConsole: NSObject, Identifiable {
     
 }
 
+// MARK:- OSCPacketDestination
 extension EosConsole: OSCPacketDestination {
     
     public func take(bundle: OSCBundle) {
-        // Eos Consoles don't send any OSC Bundles.
+        // An eos family console doesn't send any OSC Bundles. It DOES? receive them though!
         return
     }
     
@@ -187,7 +255,7 @@ extension EosConsole: OSCPacketDestination {
             let relativeAddress = message.addressWithoutEosReply()
             message.readdress(to: relativeAddress)
             guard let completionHandler = completionHandlers[relativeAddress] else { return }
-            completionHandlers.removeValue(forKey: relativeAddress)            
+            completionHandlers.removeValue(forKey: relativeAddress)
             completionHandler(message)
         } else {
             delegate?.console(self, didReceiveUndefinedMessage: OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
@@ -195,6 +263,7 @@ extension EosConsole: OSCPacketDestination {
     }
 }
 
+// MARK:- OSCClientDelegate
 extension EosConsole: OSCClientDelegate {
     
     public func clientDidConnect(client: OSCClient) {
@@ -204,6 +273,9 @@ extension EosConsole: OSCClientDelegate {
     
     public func clientDidDisconnect(client: OSCClient) {
         state = .disconnected
+        heartbeat(false)
+        systemFiltersSent = false
+        filters.removeAll()
     }
     
 }

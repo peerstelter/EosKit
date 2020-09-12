@@ -79,8 +79,8 @@ final class EosBrowserTests: XCTestCase {
         waitForExpectations(timeout: 5, handler: nil)
     }
     
-    func testResponseMessage() {
-        weak var promise = expectation(description: "No response message from console.")
+    func testReplyMessage() {
+        weak var promise = expectation(description: "No reply message from console.")
         console?.start()
         
         let mock = MockEosBrowserDelegate(callback: { console in
@@ -129,7 +129,7 @@ final class EosBrowserTests: XCTestCase {
         ("testDiscovery", testDiscovery),
         ("testInterfacesByName", testInterfacesByName),
         ("testInterfacesByAddress", testInterfacesByAddress),
-        ("testResponseMessage", testResponseMessage),
+        ("testReplyMessage", testReplyMessage),
         ("testConsoleInfo", testConsoleInfo)
     ]
 }

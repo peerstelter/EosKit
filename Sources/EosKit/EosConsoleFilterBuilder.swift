@@ -1,5 +1,5 @@
 //
-//  OSCMessage.swift
+//  EosConsoleFilterBuilder.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -22,36 +22,33 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
-//
 
 import Foundation
 import OSCKit
 
-extension OSCMessage {
+internal class EosConsoleFilterBuilder {
     
-    internal class var eosReset: OSCMessage { return Cache.eosReset }
-    internal class var eosVersion: OSCMessage { return Cache.eosVersion }
-    internal class var eosListCount: OSCMessage { return Cache.eosListCount }
-    
-    private struct Cache {
-        static let eosReset = OSCMessage(with: "/eos/reset", arguments: [])
-        static let eosVersion = OSCMessage(with: "/eos/get/version", arguments: [])
-        static let eosListCount = OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
+    internal static func filter(from fromOptions: Set<EosConsoleOption>, to toOptions: Set<EosConsoleOption>) -> (add: Set<String>?, remove: Set<String>?) {
+        
+        let removeOptions = fromOptions.subtracting(toOptions)
+        let addOptions = toOptions.subtracting(fromOptions)
+        
+        var removeFilters: Set<String> = []
+        var addFilters: Set<String> = []
+        
+        removeOptions.forEach { removeFilters = removeFilters.union($0.filters)}
+        addOptions.forEach { addFilters = addFilters.union($0.filters)}
+        
+        switch (removeFilters.isEmpty, addFilters.isEmpty) {
+        case (true, true): return (nil, nil)
+        case (false, false):
+            return (add: addFilters, remove: removeFilters)
+        case (true, false):
+            return (add: addFilters, remove: nil)
+        case (false, true):
+            return (add: nil, remove: removeFilters)
+        }
+        
     }
     
-    internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix)} }
-    
-    internal func addressWithoutEosReply() -> String {
-        let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosReplyPrefix.count)
-        return String(self.addressPattern[startIndex...])
-    }
-    
-    internal func isHeartbeat(with uuid: UUID) -> Bool {
-        guard self.addressPattern == eosPingRequest,
-              self.arguments.count == 2,
-              let argument1 = self.arguments[0] as? String,
-              let argument2 = self.arguments[1] as? String else { return false }
-        return argument1 == eosHeartbeatString && uuid.uuidString == argument2
-    }
-
 }

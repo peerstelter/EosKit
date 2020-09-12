@@ -37,6 +37,33 @@ internal let eosHeartbeatString = "EosKit Heartbeat"
 // MARK:- OSC Address Patterns
 internal let eosDiscoveryRequest = "/etc/discovery/request"
 internal let eosDiscoveryReply = "/etc/discovery/reply"
+internal let eosFiltersRemove = "/eos/filter/remove"
+internal let eosFiltersAdd = "/eos/filter/add"
 internal let eosRequestPrefix = "/eos"
 internal let eosReplyPrefix = "/eos/out"
 internal let eosPingRequest = "/ping"
+
+internal let eosSystemFilters: Set = ["/eos/out/get/version",
+                                      "/eos/out/ping",
+                                      "/eos/out/filter/add",
+                                      "/eos/out/filter/remove"]
+
+internal let eosCuesFilters: Set = ["/eos/out/get/cuelist/count",
+                                   "/eos/out/get/cuelist/*/list/*/*",
+                                   "/eos/out/get/cuelist/*/links/list/*/*",
+                                   "/eos/out/get/cue/*/noparts/count",
+                                   "/eos/out/get/cue/*/*/noparts/list/*/*",
+                                   "/eos/out/get/cue/*/*/noparts/fx/list/*/*",
+                                   "/eos/out/get/cue/*/*/noparts/links/list/*/*",
+                                   "/eos/out/get/cue/*/*/noparts/actions/list/*/*",
+                                   "/eos/out/get/cue/*/*/count",
+                                   "/eos/out/get/cue/*/*/*/list/*/*",
+                                   "/eos/out/get/cue/*/*/*/fx/list/*/*",
+                                   "/eos/out/get/cue/*/*/*/links/list/*/*",
+                                   "/eos/out/get/cue/*/*/*/actions/list/*/*"]
+
+internal let eosPatchFilters: Set = ["/eos/out/get/patch/count",
+                                     "/eos/out/get/patch/*/*/list/*/*",
+                                     "/eos/out/get/patch/*/*/notes"]
+
+internal let eosPlaybackFilters: Set = ["/eos/out/event/cue/*/*/fire"]
