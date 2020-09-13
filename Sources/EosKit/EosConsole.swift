@@ -41,7 +41,6 @@ public enum EosConsoleState: Int {
     case responsive = 4
 }
 
-
 /// The type of eos family console the `EosConsole` represents.
 public enum EosConsoleType: String {
     case nomad = "ETCnomad"
@@ -112,6 +111,8 @@ public final class EosConsole: NSObject, Identifiable {
     /// It differs from `EosConsoleState` in that it is showing the status of the socket connection and not whether or not OSC communication is currently possible between this `EosConsole` and an eos family console.
     public var isConnected: Bool { get { return client.isConnected } }
     public var delegate: EosConsoleDelegate?
+    
+    private var cuesManager: EosCuesManager?
     
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
@@ -201,41 +202,83 @@ public final class EosConsole: NSObject, Identifiable {
     
     private func consoleOptionsDidChange(from fromOptions: Set<EosConsoleOption>, to toOptions: Set<EosConsoleOption>) {
         guard state == .responsive else { return }
-        // A completion handler isn't created as eos does not send a reply to filter add and remove messages... It probably should.
-        // TODO: Request eos send replys to /eos/filter/add and /eos/filter/remove.
-        let changes = EosConsoleFilterBuilder.filter(from: fromOptions, to: toOptions)
-        filterWith(changes: changes)
+        let optionChanges = EosOptionChanges(from: fromOptions, to: toOptions)
+        filter(with: optionChanges)
+        synchronise(with: optionChanges)
     }
     
     // MARK:- Filter
     
-    private func filterWith(changes: (add: Set<String>?, remove: Set<String>?)) {
-        switch changes {
-        case (nil, nil): return
-        case (.some(let filtersToAdd), .some(let filtersToRemove)):
-            filters = filters.union(filtersToAdd)
-            filters = filters.subtracting(filtersToRemove)
+    private func filter(with changes: EosOptionChanges) {
+        let filterChanges = EosFilterChanges(with: changes)
+        // A completion handler isn't created as eos does not send a reply to filter add and remove messages... It probably should.
+        // TODO: Request eos send replys to /eos/filter/add and /eos/filter/remove.
+        switch (filterChanges.add.isEmpty, filterChanges.remove.isEmpty) {
+        case (true, true): return
+        case (false, false):
+            filters = filters.union(filterChanges.add)
+            filters = filters.subtracting(filterChanges.remove)
             // TODO: Check whether Eos can handle OSC Bundles...
             // Eos consoles CAN? receive OSCBundles and EosKit sends them to reduce the amount of message sent on the network.
             // The elements within the OSCBundles are actioned upon synscronously by Eos consoles and reply will be as individual OSCMessages.
 //            client.send(packet: OSCBundle(bundleWithMessages: [OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)),
 //                                                               OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove))]))
-            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)))
-            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove)))
-        case (.some(let filtersToAdd), nil):
-            filters = filters.union(filtersToAdd)
-            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)))
-        case (nil,.some(let filtersToRemove)):
-            filters = filters.subtracting(filtersToRemove)
-            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove)))
+            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
+            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove)))
+        case (false, true):
+            filters = filters.union(filterChanges.add)
+            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
+        case (true, false):
+            filters = filters.subtracting(filterChanges.remove)
+            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove)))
         }
     }
     
+    // MARK:- Synchronise
+    
+    private func synchronise(with changes: EosOptionChanges) {
+        addManagers(with: changes.add)
+        removeManagers(with: changes.remove)
+    }
+    
+    private func addManagers(with options: Set<EosConsoleOption>) {
+        options.forEach({
+            switch $0 {
+            case .cues:
+                cuesManager = EosCuesManager(console: self)
+            case .patch:
+                return
+            }
+        })
+    }
+    
+    private func removeManagers(with options: Set<EosConsoleOption>) {
+        options.forEach({
+            switch $0 {
+            case .cues:
+                cuesManager = nil
+            case .patch:
+                return
+            }
+        })
+    }
+    
     // MARK:- Send OSC Message
-    private func sendMessage(with addressPattern: String, arguments: [Any], completionHandler: EosKitCompletionHandler? = nil) {
+    internal func sendMessage(with addressPattern: String, arguments: [Any], completionHandler: EosKitCompletionHandler? = nil) {
         if let handler = completionHandler {
             self.completionHandlers[addressPattern] = handler
         }
+        let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
+        client.send(packet: message)
+    }
+    
+    internal func send(message: OSCMessage) {
+        client.send(packet: message)
+    }
+    
+    // TODO: Not sure this is needed anymore...
+    internal func sendMessage(with addressPattern: String, arguments: [Any], completionHandlers: [(addressPattern: String, completionHandler: EosKitCompletionHandler)]) {
+        completionHandlers.forEach({ self.completionHandlers[$0.addressPattern] = $0.completionHandler })
         let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
         client.send(packet: message)
     }
@@ -254,9 +297,13 @@ extension EosConsole: OSCPacketDestination {
         if message.isEosReply {
             let relativeAddress = message.addressWithoutEosReply()
             message.readdress(to: relativeAddress)
-            guard let completionHandler = completionHandlers[relativeAddress] else { return }
-            completionHandlers.removeValue(forKey: relativeAddress)
-            completionHandler(message)
+            if message.isEosCuesReply {
+                cuesManager?.take(message: message)
+            } else {
+                guard let completionHandler = completionHandlers[relativeAddress] else { return }
+                completionHandlers.removeValue(forKey: relativeAddress)
+                completionHandler(message)
+            }
         } else {
             delegate?.console(self, didReceiveUndefinedMessage: OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         }

@@ -1,5 +1,5 @@
 //
-//  EosBrowser.swift
+//  EosDefine.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -42,6 +42,7 @@ internal let eosFiltersAdd = "/eos/filter/add"
 internal let eosRequestPrefix = "/eos"
 internal let eosReplyPrefix = "/eos/out"
 internal let eosPingRequest = "/ping"
+internal let eosGetCue = "/get/cue"
 
 internal let eosSystemFilters: Set = ["/eos/out/get/version",
                                       "/eos/out/ping",

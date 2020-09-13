@@ -31,7 +31,6 @@ extension OSCMessage {
     
     internal class var eosReset: OSCMessage { return Cache.eosReset }
     internal class var eosVersion: OSCMessage { return Cache.eosVersion }
-    internal class var eosListCount: OSCMessage { return Cache.eosListCount }
     
     private struct Cache {
         static let eosReset = OSCMessage(with: "/eos/reset", arguments: [])
@@ -39,8 +38,8 @@ extension OSCMessage {
         static let eosListCount = OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
     }
     
-    internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix)} }
-    
+    internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix) }}
+    internal var isEosCuesReply: Bool { get { self.addressPattern.hasPrefix(eosGetCue) }}
     internal func addressWithoutEosReply() -> String {
         let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosReplyPrefix.count)
         return String(self.addressPattern[startIndex...])

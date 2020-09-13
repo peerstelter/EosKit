@@ -1,5 +1,5 @@
 //
-//  EosConsoleFilterBuilder.swift
+//  EosOptionManagerProtocol.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,29 +26,7 @@
 import Foundation
 import OSCKit
 
-internal class EosConsoleFilterBuilder {
-    
-    internal static func filter(from fromOptions: Set<EosConsoleOption>, to toOptions: Set<EosConsoleOption>) -> (add: Set<String>?, remove: Set<String>?) {
-        
-        let removeOptions = fromOptions.subtracting(toOptions)
-        let addOptions = toOptions.subtracting(fromOptions)
-        
-        var removeFilters: Set<String> = []
-        var addFilters: Set<String> = []
-        
-        removeOptions.forEach { removeFilters = removeFilters.union($0.filters)}
-        addOptions.forEach { addFilters = addFilters.union($0.filters)}
-        
-        switch (removeFilters.isEmpty, addFilters.isEmpty) {
-        case (true, true): return (nil, nil)
-        case (false, false):
-            return (add: addFilters, remove: removeFilters)
-        case (true, false):
-            return (add: addFilters, remove: nil)
-        case (false, true):
-            return (add: nil, remove: removeFilters)
-        }
-        
-    }
-    
+internal protocol EosOptionManagerProtocol {
+    func synchronise()
+    func take(message: OSCMessage)
 }
