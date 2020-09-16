@@ -35,11 +35,10 @@ extension OSCMessage {
     private struct Cache {
         static let eosReset = OSCMessage(with: "/eos/reset", arguments: [])
         static let eosVersion = OSCMessage(with: "/eos/get/version", arguments: [])
-        static let eosListCount = OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
     }
     
     internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix) }}
-    internal var isEosCuesReply: Bool { get { self.addressPattern.hasPrefix(eosGetCue) }}
+    
     internal func addressWithoutEosReply() -> String {
         let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosReplyPrefix.count)
         return String(self.addressPattern[startIndex...])
@@ -51,6 +50,33 @@ extension OSCMessage {
               let argument1 = self.arguments[0] as? String,
               let argument2 = self.arguments[1] as? String else { return false }
         return argument1 == eosHeartbeatString && uuid.uuidString == argument2
+    }
+    
+    internal static func update(_ bool: inout Bool, withArgument argument: Any) {
+        if let item = argument as? OSCArgument {
+            let boolItem = item == .oscTrue
+            if bool != boolItem {
+                bool = boolItem
+            }
+        }
+    }
+    
+    internal static func update(_ int32: inout Int32, withArgument argument: Any) {
+        if let item = argument as? Int32, int32 != item {
+            int32 = item
+        }
+    }
+    
+    internal static func update(_ uint32: inout UInt32, withArgument argument: Any) {
+        if let number = argument as? NSNumber, let item = UInt32(exactly: number), uint32 != item {
+            uint32 = item
+        }
+    }
+    
+    internal static func update(_ string: inout String, withArgument argument: Any) {
+        if let item = argument as? String, string != item {
+            string = item
+        }
     }
 
 }

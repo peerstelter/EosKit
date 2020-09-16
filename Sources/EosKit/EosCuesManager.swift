@@ -29,74 +29,105 @@ import OSCKit
 internal final class EosCuesManager: EosOptionManagerProtocol {
     
     private let console: EosConsole
+    private let addressSpace = OSCAddressSpace()
+    private let database: EosCueDatabase
+    private let handler: EosCuesMessageHandler
     
     init(console: EosConsole) {
         self.console = console
+        self.database = EosCueDatabase()
+        self.handler = EosCuesMessageHandler(console: console, database: self.database)
+        registerAddressSpace()
         synchronise()
     }
     
+    private func registerAddressSpace() {
+        let cueListCountMethod = OSCAddressMethod(with: "/get/cuelist/count", andCompletionHandler: handler.cueListCount(message:))
+        addressSpace.methods.insert(cueListCountMethod)
+        let cueListMethod = OSCAddressMethod(with: "/get/cuelist/*/list/*/*", andCompletionHandler: handler.cueList(message:))
+        addressSpace.methods.insert(cueListMethod)
+        let cueListLinkMethod = OSCAddressMethod(with: "/get/cuelist/*/links/list/*/*", andCompletionHandler: handler.cueListLinks(message:))
+        addressSpace.methods.insert(cueListLinkMethod)
+        let cueCountForListMethod = OSCAddressMethod(with: "/get/cue/*/noparts/count", andCompletionHandler: handler.cueCountForList(message:))
+        addressSpace.methods.insert(cueCountForListMethod)
+        let cueMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/list/*/*", andCompletionHandler: handler.cue(message:))
+        addressSpace.methods.insert(cueMethod)
+        let cueEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/fx/list/*/*", andCompletionHandler: handler.cueEffects(message:))
+        addressSpace.methods.insert(cueEffectsMethod)
+        let cueLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/links/list/*/*", andCompletionHandler: handler.cueLinks(message:))
+        addressSpace.methods.insert(cueLinksMethod)
+        let cueActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/actions/list/*/*", andCompletionHandler: handler.cueActions(message:))
+        addressSpace.methods.insert(cueActionsMethod)
+        let partCountForCueMethod = OSCAddressMethod(with: "/get/cue/*/*/count", andCompletionHandler: handler.partCountForCue(message:))
+        addressSpace.methods.insert(partCountForCueMethod)
+        let partMethod = OSCAddressMethod(with: "/get/cue/*/*/*/list/*/*", andCompletionHandler: handler.part(message:))
+        addressSpace.methods.insert(partMethod)
+        let partEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/fx/list/*/*", andCompletionHandler: handler.partEffects(message:))
+        addressSpace.methods.insert(partEffectsMethod)
+        let partLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/*/links/list/*/*", andCompletionHandler: handler.partLinks(message:))
+        addressSpace.methods.insert(partLinksMethod)
+        let partActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/actions/list/*/*", andCompletionHandler: handler.partActions(message:))
+        addressSpace.methods.insert(partActionsMethod)
+    }
+    
     func synchronise() {
-        console.send(message: OSCMessage.eosListCount)
+        console.send(message: OSCMessage.eosGetCueListCount())
     }
     
     func take(message: OSCMessage) {
-        print(message.addressPattern)
-        switch message.cueMessageType {
-        case .cueListCount:
-            guard let count = message.arguments[0] as? Int32 else { return }
-            // Request detailed information for each item from index 0 up to count.
-            for index in 0..<count {
-                console.send(message: OSCMessage(EosGetListWithIndex: index))
-            }
-        case .cueList:
-            print(message.addressPattern)
-//            manager.received(message: message, ofType: .cueList)
-            console.send(message: OSCMessage(EosGetCueCountForList: Int32(message.addressParts[4])!))
-        case .cueListLink:
-            print(message.addressPattern)
-//            manager.received(message: message, ofType: .cueListLink)
-        case .cueCountForList:
-            guard let count = message.arguments[0] as? Int32 else { return }
-            for index in 0..<count {
-                console.send(message: OSCMessage(EosGetCueWithList: Int32(message.addressParts[4])!, andIndex: index))
-            }
-        case .cue:
-//            manager.received(message: message, ofType: .cue)
-            console.send(message: OSCMessage(EosGetPartCountForList: Int32(message.addressParts[4])!, andCue: Float32(message.addressParts[5])!))
-        case .cueEffects:
-            print(message.addressPattern)
-//            manager.received(message: message, ofType: .cueEffects)
-        case .cueLinks:
-            print(message.addressPattern)
-//            manager.received(message: message, ofType: .cueLinks)
-        case .cueActions:
-            print(message.addressPattern)
-//            manager.received(message: message, ofType: .cueActions)
-        case .partCountForCue:
-            guard let count = message.arguments[0] as? Int32 else { return }
-            for index in 0..<count where count > 0 {
-                console.send(message: OSCMessage(EosGetPartWithList: EosList(for: message), cue: Int32(message.addressParts[5])!, andIndex: index))
-            }
-        case .part:
-            print("INPUT: Part: \(message.addressPattern)")
-        case .partEffects:
-            print("INPUT: Part Effects: \(message.addressPattern)")
-        case .partLinks:
-            print("INPUT: Part Links: \(message.addressPattern)")
-        case .partActions:
-            print("INPUT: Part Actions: \(message.addressPattern)")
-        case .unknown:
+//        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
+        let _ = addressSpace.complete(with: message, priority: .string)
+        
+        
+//        switch message.cueMessageType {
+//        case .cueListCount:
+//            guard let count = message.arguments[0] as? Int32 else { return }
+//            // Request detailed information for each item from index 0 up to count.
+//            for index in 0..<count {
+//                console.send(message: OSCMessage(EosGetListWithIndex: index))
+//            }
+//        case .cueList:
 //            print(message.addressPattern)
-            break
-        }
-    }
-    
-    private func EosList(for message: OSCMessage) -> Int32 {
-        if message.addressParts.count > 3 {
-            return Int32(message.addressParts[4])!
-        } else {
-            return 0
-        }
+////            manager.received(message: message, ofType: .cueList)
+////            console.send(message: OSCMessage(EosGetCueCountForList: Int32(message.addressParts[4])!))
+//        case .cueListLink:
+//            print(message.addressPattern)
+//        print(Date().timeIntervalSince(date!))
+////            manager.received(message: message, ofType: .cueListLink)
+//        case .cueCountForList:
+//            guard let count = message.arguments[0] as? Int32 else { return }
+//            for index in 0..<count {
+//                console.send(message: OSCMessage(EosGetCueWithList: Int32(message.addressParts[4])!, andIndex: index))
+//            }
+//        case .cue:
+////            manager.received(message: message, ofType: .cue)
+//            console.send(message: OSCMessage(EosGetPartCountForList: Int32(message.addressParts[4])!, andCue: Float32(message.addressParts[5])!))
+//        case .cueEffects:
+//            print(message.addressPattern)
+////            manager.received(message: message, ofType: .cueEffects)
+//        case .cueLinks:
+//            print(message.addressPattern)
+////            manager.received(message: message, ofType: .cueLinks)
+//        case .cueActions:
+//            print(message.addressPattern)
+////            manager.received(message: message, ofType: .cueActions)
+//        case .partCountForCue:
+//            guard let count = message.arguments[0] as? Int32 else { return }
+//            for index in 0..<count where count > 0 {
+//                console.send(message: OSCMessage(EosGetPartWithList: EosList(for: message), cue: Int32(message.addressParts[5])!, andIndex: index))
+//            }
+//        case .part:
+//            print("INPUT: Part: \(message.addressPattern)")
+//        case .partEffects:
+//            print("INPUT: Part Effects: \(message.addressPattern)")
+//        case .partLinks:
+//            print("INPUT: Part Links: \(message.addressPattern)")
+//        case .partActions:
+//            print("INPUT: Part Actions: \(message.addressPattern)")
+//        case .unknown:
+////            print(message.addressPattern)
+//            break
+//        }
     }
     
 }

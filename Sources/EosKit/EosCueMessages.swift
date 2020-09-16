@@ -45,12 +45,6 @@ public enum EosCueMessageType {
 
 extension OSCMessage {
     
-    internal class var eosListCount: OSCMessage { return Cache.eosListCount }
-    
-    private struct Cache {
-        static let eosListCount = OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
-    }
-    
     public var cueMessageType: EosCueMessageType {
         get {
             if self.isCueListCount {
@@ -83,26 +77,6 @@ extension OSCMessage {
                 return .unknown
             }
         }
-    }
-    
-    convenience init(EosGetListWithIndex index: Int32) {
-        self.init(with: "/eos/get/cuelist/index/\(index)", arguments: [])
-    }
-    
-    convenience init(EosGetCueCountForList list: Int32) {
-        self.init(with: "/eos/get/cue/\(list)/noparts/count", arguments: [])
-    }
-    
-    convenience init(EosGetCueWithList list: Int32, andIndex index: Int32) {
-        self.init(with: "/eos/get/cue/\(list)/noparts/index/\(index)", arguments: [])
-    }
-    
-    convenience init(EosGetPartCountForList list: Int32, andCue cue: Float32) {
-        self.init(with: "/eos/get/cue/\(list)/\(cue)/count", arguments: [])
-    }
-    
-    convenience init(EosGetPartWithList list:Int32, cue: Int32, andIndex index: Int32) {
-        self.init(with: "/eos/get/cue/\(list)/\(cue)/index/\(index)", arguments: [])
     }
     
     // /eos/out/get/cuelist/count

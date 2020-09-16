@@ -177,7 +177,7 @@ public final class EosConsole: NSObject, Identifiable {
             if message.isHeartbeat(with: strongSelf.uuid), strongSelf.state != .responsive {
                 strongSelf.state = .responsive
                 if strongSelf.systemFiltersSent == false {
-                    strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(eosSystemFilters)))
+//                    strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(eosSystemFilters)))
                     strongSelf.filters = strongSelf.filters.union(eosSystemFilters)
                     strongSelf.systemFiltersSent = true
                 }
@@ -203,7 +203,7 @@ public final class EosConsole: NSObject, Identifiable {
     private func consoleOptionsDidChange(from fromOptions: Set<EosConsoleOption>, to toOptions: Set<EosConsoleOption>) {
         guard state == .responsive else { return }
         let optionChanges = EosOptionChanges(from: fromOptions, to: toOptions)
-        filter(with: optionChanges)
+//        filter(with: optionChanges)
         synchronise(with: optionChanges)
     }
     
@@ -297,7 +297,7 @@ extension EosConsole: OSCPacketDestination {
         if message.isEosReply {
             let relativeAddress = message.addressWithoutEosReply()
             message.readdress(to: relativeAddress)
-            if message.isEosCuesReply {
+            if message.addressPattern.hasPrefix("/get/cue") {
                 cuesManager?.take(message: message)
             } else {
                 guard let completionHandler = completionHandlers[relativeAddress] else { return }
