@@ -27,11 +27,7 @@ import Foundation
 
 internal class EosCueDatabase {
     
-    private (set) public var lists: Set<EosCueList> = [] {
-        didSet {
-            lists.forEach { print($0.description) }
-        }
-    }
+    private (set) public var lists: Set<EosCueList> = []
     
     internal func add(list: EosCueList) {
         lists.insert(list)

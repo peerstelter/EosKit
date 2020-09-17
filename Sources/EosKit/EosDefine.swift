@@ -48,9 +48,11 @@ internal let eosSystemFilters: Set = ["/eos/out/get/version",
                                       "/eos/out/filter/add",
                                       "/eos/out/filter/remove"]
 
+// TODO: Comment out the noparts methods if we are no longer using them in the cue sync process.
 internal let eosCuesFilters: Set = ["/eos/out/get/cuelist/count",
                                    "/eos/out/get/cuelist/*/list/*/*",
                                    "/eos/out/get/cuelist/*/links/list/*/*",
+                                   "/eos/out/get/cue/*/count",
                                    "/eos/out/get/cue/*/noparts/count",
                                    "/eos/out/get/cue/*/*/noparts/list/*/*",
                                    "/eos/out/get/cue/*/*/noparts/fx/list/*/*",

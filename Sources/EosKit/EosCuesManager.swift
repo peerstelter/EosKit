@@ -33,12 +33,11 @@ internal final class EosCuesManager: EosOptionManagerProtocol {
     private let database: EosCueDatabase
     private let handler: EosCuesMessageHandler
     
-    init(console: EosConsole) {
+    init(console: EosConsole, progress: Progress? = nil) {
         self.console = console
         self.database = EosCueDatabase()
-        self.handler = EosCuesMessageHandler(console: console, database: self.database)
+        self.handler = EosCuesMessageHandler(console: console, database: self.database, progress: progress)
         registerAddressSpace()
-        synchronise()
     }
     
     private func registerAddressSpace() {
@@ -48,26 +47,36 @@ internal final class EosCuesManager: EosOptionManagerProtocol {
         addressSpace.methods.insert(cueListMethod)
         let cueListLinkMethod = OSCAddressMethod(with: "/get/cuelist/*/links/list/*/*", andCompletionHandler: handler.cueListLinks(message:))
         addressSpace.methods.insert(cueListLinkMethod)
-        let cueCountForListMethod = OSCAddressMethod(with: "/get/cue/*/noparts/count", andCompletionHandler: handler.cueCountForList(message:))
+//        let cueCountForListMethod = OSCAddressMethod(with: "/get/cue/*/noparts/count", andCompletionHandler: handler.cueCountForList(message:))
+//        addressSpace.methods.insert(cueCountForListMethod)
+        let cueCountForListMethod = OSCAddressMethod(with: "/get/cue/*/count", andCompletionHandler: handler.cueCountForList(message:))
         addressSpace.methods.insert(cueCountForListMethod)
-        let cueMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/list/*/*", andCompletionHandler: handler.cue(message:))
+        let cueMethod = OSCAddressMethod(with: "/get/cue/*/*/*/list/*/*", andCompletionHandler: handler.cue(message:))
         addressSpace.methods.insert(cueMethod)
-        let cueEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/fx/list/*/*", andCompletionHandler: handler.cueEffects(message:))
+        let cueEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/fx/list/*/*", andCompletionHandler: handler.cueEffects(message:))
         addressSpace.methods.insert(cueEffectsMethod)
-        let cueLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/links/list/*/*", andCompletionHandler: handler.cueLinks(message:))
+        let cueLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/*/links/list/*/*", andCompletionHandler: handler.cueLinks(message:))
         addressSpace.methods.insert(cueLinksMethod)
-        let cueActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/actions/list/*/*", andCompletionHandler: handler.cueActions(message:))
+        let cueActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/actions/list/*/*", andCompletionHandler: handler.cueActions(message:))
         addressSpace.methods.insert(cueActionsMethod)
-        let partCountForCueMethod = OSCAddressMethod(with: "/get/cue/*/*/count", andCompletionHandler: handler.partCountForCue(message:))
-        addressSpace.methods.insert(partCountForCueMethod)
-        let partMethod = OSCAddressMethod(with: "/get/cue/*/*/*/list/*/*", andCompletionHandler: handler.part(message:))
-        addressSpace.methods.insert(partMethod)
-        let partEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/fx/list/*/*", andCompletionHandler: handler.partEffects(message:))
-        addressSpace.methods.insert(partEffectsMethod)
-        let partLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/*/links/list/*/*", andCompletionHandler: handler.partLinks(message:))
-        addressSpace.methods.insert(partLinksMethod)
-        let partActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/actions/list/*/*", andCompletionHandler: handler.partActions(message:))
-        addressSpace.methods.insert(partActionsMethod)
+//        let cueMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/list/*/*", andCompletionHandler: handler.cue(message:))
+//        addressSpace.methods.insert(cueMethod)
+//        let cueEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/fx/list/*/*", andCompletionHandler: handler.cueEffects(message:))
+//        addressSpace.methods.insert(cueEffectsMethod)
+//        let cueLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/links/list/*/*", andCompletionHandler: handler.cueLinks(message:))
+//        addressSpace.methods.insert(cueLinksMethod)
+//        let cueActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/noparts/actions/list/*/*", andCompletionHandler: handler.cueActions(message:))
+//        addressSpace.methods.insert(cueActionsMethod)
+//        let partCountForCueMethod = OSCAddressMethod(with: "/get/cue/*/*/count", andCompletionHandler: handler.partCountForCue(message:))
+//        addressSpace.methods.insert(partCountForCueMethod)
+//        let partMethod = OSCAddressMethod(with: "/get/cue/*/*/*/list/*/*", andCompletionHandler: handler.part(message:))
+//        addressSpace.methods.insert(partMethod)
+//        let partEffectsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/fx/list/*/*", andCompletionHandler: handler.partEffects(message:))
+//        addressSpace.methods.insert(partEffectsMethod)
+//        let partLinksMethod = OSCAddressMethod(with: "/get/cue/*/*/*/links/list/*/*", andCompletionHandler: handler.partLinks(message:))
+//        addressSpace.methods.insert(partLinksMethod)
+//        let partActionsMethod = OSCAddressMethod(with: "/get/cue/*/*/*/actions/list/*/*", andCompletionHandler: handler.partActions(message:))
+//        addressSpace.methods.insert(partActionsMethod)
     }
     
     func synchronise() {

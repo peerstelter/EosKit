@@ -32,15 +32,15 @@ class EosCue: EosCueBase {
     var listNumber: UInt32
     var number: Double
     var partCount: UInt32
-    var parts: Set<EosCuePart> = [] { didSet { parts.forEach { print($0.description) } } }
+    var parts: Set<EosCuePart> = []
 
     var description: String { get { return "Cue \(listNumber)/\(number)\(!label.isEmpty ? " (\(label)):" : ":")" } }
     
-    internal init(index: UInt32, listNumber: UInt32, number: Double, uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, partCount: UInt32, cueNotes: String, sceneText: String, sceneEnd: Bool) {
+    internal init(listNumber: UInt32, number: Double, uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, partCount: UInt32, cueNotes: String, sceneText: String, sceneEnd: Bool) {
         self.listNumber = listNumber
         self.number = number
         self.partCount = partCount
-        super.init(index: index, uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat, curve: curve, rate: rate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade, loop: loop, solo: solo, timecode: timecode, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd)
+        super.init(uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat, curve: curve, rate: rate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade, loop: loop, solo: solo, timecode: timecode, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd)
     }
     
     internal static func number(from message: OSCMessage) -> String? {

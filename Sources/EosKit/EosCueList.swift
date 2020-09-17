@@ -39,7 +39,6 @@ public class EosCueList: Equatable, Hashable {
     
     var description: String { get { return "Cue List \(number)\(!label.isEmpty ? " (\(label)):" : ":") \(!links.isEmpty ? "links: \(links)" : "")\(!cues.isEmpty ? "Cues: \(cues.count)" : "")" } }
     
-    var index: UInt32
     var number: UInt32
     let uuid: UUID              // Should never change.
     var label: String
@@ -53,11 +52,10 @@ public class EosCueList: Equatable, Hashable {
     var soloMode: Bool
     var timecodeList: UInt32?
     var oosSync: Bool
-    var links: Set<Double> = [] { didSet { print(description) } } // OSC Number Range - When a range numbers contains 2 or more consecutive whole numbers, they will be represented as strings in the following format: X-Y.
-    var cues: Set<EosCue> = [] { didSet { cues.forEach { print($0.description) } } }
+    var links: Set<Double> = [] // OSC Number Range - When a range numbers contains 2 or more consecutive whole numbers, they will be represented as strings in the following format: X-Y.
+    var cues: Set<EosCue> = []
     
-    internal init(index: UInt32, number: UInt32, uuid: UUID, label: String, playbackMode: String, faderMode: String, independent: Bool, htp: Bool, assert: Bool, block: Bool, background: Bool, soloMode: Bool, timecodeList: UInt32?, oosSync: Bool) {
-        self.index = index
+    internal init(number: UInt32, uuid: UUID, label: String, playbackMode: String, faderMode: String, independent: Bool, htp: Bool, assert: Bool, block: Bool, background: Bool, soloMode: Bool, timecodeList: UInt32?, oosSync: Bool) {
         self.number = number
         self.uuid = uuid
         self.label = label
@@ -75,7 +73,6 @@ public class EosCueList: Equatable, Hashable {
     
     static func list(from message: OSCMessage) -> EosCueList? {
         guard message.arguments.count >= 13 else { return nil }
-        guard let index = message.arguments[0] as? NSNumber, let uIndex = UInt32(exactly: index) else { return nil }
         guard let number = number(from: message), let uNumber = UInt32(number) else { return nil }
         guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
         guard let label = message.arguments[2] as? String else { return nil }
@@ -89,7 +86,7 @@ public class EosCueList: Equatable, Hashable {
         guard let soloMode = message.arguments[10] as? OSCArgument else { return nil }
         guard let timecodeList = message.arguments[11] as? NSNumber else { return nil }
         guard let oosSync = message.arguments[12] as? OSCArgument else { return nil }
-        return EosCueList(index: uIndex, number: uNumber, uuid: uuid, label: label, playbackMode: playbackMode, faderMode: faderMode, independent: independent == .oscTrue, htp: htp == .oscTrue, assert: assert == .oscTrue, block: block == .oscTrue, background: background == .oscTrue, soloMode: soloMode == .oscTrue, timecodeList: UInt32(exactly: timecodeList), oosSync: oosSync == .oscTrue)
+        return EosCueList(number: uNumber, uuid: uuid, label: label, playbackMode: playbackMode, faderMode: faderMode, independent: independent == .oscTrue, htp: htp == .oscTrue, assert: assert == .oscTrue, block: block == .oscTrue, background: background == .oscTrue, soloMode: soloMode == .oscTrue, timecodeList: UInt32(exactly: timecodeList), oosSync: oosSync == .oscTrue)
      }
     
     internal static func number(from message: OSCMessage) -> String? {
@@ -100,7 +97,6 @@ public class EosCueList: Equatable, Hashable {
     internal func updateWithCueList(message: OSCMessage) {
         guard message.arguments.count >= 13 else { return }
         guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid), self.uuid == uuid else { return }
-        OSCMessage.update(&index, withArgument: message.arguments[0])
         if let number = EosCueList.number(from: message), let uNumber = UInt32(number), self.number != uNumber {
             self.number = uNumber
         }

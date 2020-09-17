@@ -30,6 +30,7 @@ import OSCKit
 public protocol EosConsoleDelegate {
     func console(_ console: EosConsole, didUpdateState state: EosConsoleState)
     func console(_ console: EosConsole, didReceiveUndefinedMessage message: String)
+    func console(_ console: EosConsole, didCompleteSynchronisingOptions options: Set<EosConsoleOption>)
 }
 
 /// Represents the current state of an EosConsole.
@@ -112,6 +113,11 @@ public final class EosConsole: NSObject, Identifiable {
     public var isConnected: Bool { get { return client.isConnected } }
     public var delegate: EosConsoleDelegate?
     
+    private var observationContext = 1
+    private var progress = Progress(totalUnitCount: -1)
+    private var managerProgresses: [NSObject: Progress] = [:]
+    public var progressHandler: ((Double, String, String) -> Void)?
+    
     private var cuesManager: EosCuesManager?
     
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
@@ -126,10 +132,12 @@ public final class EosConsole: NSObject, Identifiable {
     
     deinit {
         print("Deinitialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
+        progress.removeObserver(self, forKeyPath: "fractionCompleted", context: &observationContext)
     }
     
     public func connect() -> Bool {
         client.delegate = self
+        progress.addObserver(self, forKeyPath: "fractionCompleted", options: [], context: &observationContext)
         do {
             try client.connect()
             return true
@@ -141,6 +149,7 @@ public final class EosConsole: NSObject, Identifiable {
     public func disconnect() {
         client.disconnect()
         client.delegate = nil
+        progress.removeObserver(self, forKeyPath: "fractionCompleted", context: &observationContext)
     }
     
     // MARK:- Heartbeat
@@ -242,10 +251,14 @@ public final class EosConsole: NSObject, Identifiable {
     }
     
     private func addManagers(with options: Set<EosConsoleOption>) {
+        progress.totalUnitCount = Int64(options.count)
         options.forEach({
             switch $0 {
             case .cues:
-                cuesManager = EosCuesManager(console: self)
+                let managerProgress = Progress(totalUnitCount: 1)
+                cuesManager = EosCuesManager(console: self, progress: managerProgress)
+                progress.addChild(managerProgress, withPendingUnitCount: 1)
+                cuesManager?.synchronise()
             case .patch:
                 return
             }
@@ -323,6 +336,22 @@ extension EosConsole: OSCClientDelegate {
         heartbeat(false)
         systemFiltersSent = false
         filters.removeAll()
+    }
+    
+}
+
+extension EosConsole {
+
+    public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if let handler = progressHandler, context == &observationContext && keyPath == "fractionCompleted" {
+            let progress = (object as! Progress)
+            handler(progress.fractionCompleted, progress.localizedDescription!, progress.localizedAdditionalDescription!)
+            if let delegate = delegate, progress.isFinished {
+                delegate.console(self, didCompleteSynchronisingOptions: self.options)
+            }
+        } else {
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+        }
     }
     
 }

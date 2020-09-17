@@ -37,7 +37,6 @@ class EosCueBase: Hashable {
         hasher.combine(uuid)
     }
     
-    var index: UInt32
     let uuid: UUID                  // Should never change
     var label: String
     var upTimeDuration: Int32       // milliseconds
@@ -70,8 +69,7 @@ class EosCueBase: Hashable {
     var links: Set<Double> = []
     var actions: String = ""
     
-    internal init(index: UInt32, uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, cueNotes: String, sceneText: String, sceneEnd: Bool) {
-        self.index = index
+    internal init(uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, cueNotes: String, sceneText: String, sceneEnd: Bool) {
         self.uuid = uuid
         self.label = label
         self.upTimeDuration = upTimeDuration
@@ -104,7 +102,6 @@ class EosCueBase: Hashable {
     
     internal static func cue(from message: OSCMessage) -> EosCue? {
         guard message.arguments.count >= 30 else { return nil }
-        guard let index = message.arguments[0] as? NSNumber, let uIndex = UInt32(exactly: index) else { return nil }
         guard let listNumber = EosCueList.number(from: message), let uListNumber = UInt32(listNumber) else { return nil }
         guard let number = EosCue.number(from: message), let dNumber = Double(number) else { return nil }
         guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
@@ -136,12 +133,11 @@ class EosCueBase: Hashable {
         guard let cueNotes = message.arguments[27] as? String else { return nil }
         guard let sceneText = message.arguments[28] as? String else { return nil }
         guard let sceneEnd = message.arguments[29] as? OSCArgument else { return nil }
-        return EosCue(index: uIndex, listNumber: uListNumber, number: dNumber, uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat == .oscTrue, curve: curve, rate: uRate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade == .oscTrue, loop: loop, solo: solo == .oscTrue, timecode: timecode, partCount: uPartCount, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd == .oscTrue)
+        return EosCue(listNumber: uListNumber, number: dNumber, uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat == .oscTrue, curve: curve, rate: uRate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade == .oscTrue, loop: loop, solo: solo == .oscTrue, timecode: timecode, partCount: uPartCount, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd == .oscTrue)
     }
     
     internal static func part(from message: OSCMessage) -> EosCuePart? {
         guard message.arguments.count >= 30 else { return nil }
-        guard let index = message.arguments[0] as? NSNumber, let uIndex = UInt32(exactly: index) else { return nil }
         guard let listNumber = EosCueList.number(from: message), let uListNumber = UInt32(listNumber) else { return nil }
         guard let cueNumber = EosCue.number(from: message), let dCueNumber = Double(cueNumber) else { return nil }
         guard let number = EosCuePart.number(from: message), let uNumber = UInt32(number) else { return nil }
@@ -173,7 +169,7 @@ class EosCueBase: Hashable {
         guard let cueNotes = message.arguments[27] as? String else { return nil }
         guard let sceneText = message.arguments[28] as? String else { return nil }
         guard let sceneEnd = message.arguments[29] as? OSCArgument else { return nil }
-        return EosCuePart(index: uIndex, listNumber: uListNumber, cueNumber: dCueNumber, number: uNumber, uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat == .oscTrue, curve: curve, rate: uRate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade == .oscTrue, loop: loop, solo: solo == .oscTrue, timecode: timecode, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd == .oscTrue)
+        return EosCuePart(listNumber: uListNumber, cueNumber: dCueNumber, number: uNumber, uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat == .oscTrue, curve: curve, rate: uRate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade == .oscTrue, loop: loop, solo: solo == .oscTrue, timecode: timecode, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd == .oscTrue)
     }
 
     
@@ -190,7 +186,6 @@ class EosCueBase: Hashable {
     internal func updateWith(message: OSCMessage) {
         guard message.arguments.count >= 30 else { return }
         guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid), self.uuid == uuid else { return }
-        OSCMessage.update(&index, withArgument: message.arguments[0])
         OSCMessage.update(&label, withArgument: message.arguments[2])
         OSCMessage.update(&upTimeDuration, withArgument: message.arguments[3])
         OSCMessage.update(&upTimeDelay, withArgument: message.arguments[4])
