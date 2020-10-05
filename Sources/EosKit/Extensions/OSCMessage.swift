@@ -52,6 +52,12 @@ extension OSCMessage {
         return argument1 == eosHeartbeatString && uuid.uuidString == argument2
     }
     
+    internal func uuid() -> UUID? {
+        guard  self.arguments.count >= 2 else { return nil }
+        guard let uid = self.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
+        return uuid
+    }
+    
     internal static func update(_ bool: inout Bool, withArgument argument: Any) {
         if let item = argument as? OSCArgument {
             let boolItem = item == .oscTrue

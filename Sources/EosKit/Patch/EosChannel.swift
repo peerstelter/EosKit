@@ -1,5 +1,5 @@
 //
-//  EosOptionManagerProtocol.swift
+//  EosChannel.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -22,22 +22,41 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
+//
 
 import Foundation
 import OSCKit
 
-internal protocol EosOptionManagerProtocol {
+class EosChannel: Hashable {
     
-    var addressSpace: OSCAddressSpace { get }
-    func synchronise()
-    func take(message: OSCMessage)
-}
-
-extension EosOptionManagerProtocol {
-    
-    func take(message: OSCMessage) {
-        OSCAnnotation.annotation(for: message, with: .spaces, andType: true)
-        let _ = addressSpace.complete(with: message, priority: .string)
+    static func == (lhs: EosChannel, rhs: EosChannel) -> Bool {
+        return lhs.number == rhs.number
     }
     
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(number)
+    }
+    
+    var number: UInt32
+    var parts: Set<EosChannelPart> = []
+    
+    init(number: UInt32) {
+        self.number = number
+    }
+    
+    internal static func channel(from message: OSCMessage) -> EosChannel? {
+        guard let number = EosChannel.number(from: message), let uNumber = UInt32(number) else { return nil }
+        return EosChannel(number: uNumber)
+    }
+    
+    internal static func number(from message: OSCMessage) -> String? {
+        guard message.addressParts.count > 3 else { return nil }
+        return message.addressParts[2]
+    }
+    
+    internal func updateNumber(with message: OSCMessage) {
+        if let number = EosChannel.number(from: message), let uNumber = UInt32(number), self.number != uNumber {
+            self.number = uNumber
+        }
+    }
 }

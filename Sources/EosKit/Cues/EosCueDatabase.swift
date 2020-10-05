@@ -69,6 +69,4 @@ internal class EosCueDatabase {
         return true
     }
 
-    
-    
 }

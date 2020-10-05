@@ -33,7 +33,7 @@ class EosCuePart: EosCueBase {
     var cueNumber: Double
     var number: UInt32
     
-    var description: String { get { return "Cue \(listNumber)/\(cueNumber)/\(number)\(!label.isEmpty ? " (\(label)):" : ":")" } }
+    var description: String { get { return "Cue \(listNumber)/\(cueNumber)/\(number)\(!label.isEmpty ? " (\(label))" : "")" } }
     
     internal init(listNumber: UInt32, cueNumber: Double, number: UInt32, uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, cueNotes: String, sceneText: String, sceneEnd: Bool) {
         self.listNumber = listNumber

@@ -1,5 +1,5 @@
 //
-//  EosOptionManagerProtocol.swift
+//  EosPatchDatabase.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,20 +24,26 @@
 //  THE SOFTWARE.
 
 import Foundation
-import OSCKit
 
-internal protocol EosOptionManagerProtocol {
+internal class EosPatchDatabase {
     
-    var addressSpace: OSCAddressSpace { get }
-    func synchronise()
-    func take(message: OSCMessage)
-}
-
-extension EosOptionManagerProtocol {
+    private (set) public var channels: Set<EosChannel> = []
     
-    func take(message: OSCMessage) {
-        OSCAnnotation.annotation(for: message, with: .spaces, andType: true)
-        let _ = addressSpace.complete(with: message, priority: .string)
+    internal func add(channel: EosChannel) {
+        channels.insert(channel)
+    }
+    
+    internal func remove(channel: EosChannel) {
+        channels.remove(channel)
+    }
+    
+    internal func channel(with number: UInt32) -> EosChannel? {
+        return channels.first(where: { $0.number == number })
+    }
+    
+    internal func patch(with uuid: UUID, inChannelWithNumber channelNumber: UInt32) -> EosChannelPart? {
+        guard let channel = channel(with: channelNumber) else { return nil }
+        return channel.parts.first(where: { $0.uuid == uuid })
     }
     
 }

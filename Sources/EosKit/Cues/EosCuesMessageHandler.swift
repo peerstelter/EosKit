@@ -51,31 +51,35 @@ class EosCuesMessageHandler {
         cueProgresses.removeAll()
         listProgress = Progress(totalUnitCount: Int64(count))
         managerProgress?.addChild(listProgress!, withPendingUnitCount: 1)
+        
+        // Sending as OSCBundle
+//        let messages = (0..<count).map { OSCMessage.eosGetCueList(with: "\($0)") }
+//        let bundle = OSCBundle(with: messages)
+//        console.send(bundle)
+        
+        // Sending as individual OSCMessages
         for index in 0..<count {
-//            print("Sending Get List \(index)")
-            console.send(message: OSCMessage.eosGetCueList(with: "\(index)"))
+            console.send(OSCMessage.eosGetCueList(with: "\(index)"))
         }
     }
     
     internal func cueList(message: OSCMessage) {
-        guard let uuid = uuid(from: message) else { return }
+        guard let uuid = message.uuid() else { return }
         if let list = database.list(with: uuid) {
             list.updateWithCueList(message: message)
         } else {
             guard let list = EosCueList.list(from: message) else { return }
             database.add(list: list)
-//            print("Receiving List \(list.number)")
         }
     }
     
     internal func cueListLinks(message: OSCMessage) {
         // Check whether we actually have the list in the database before we attempt to update it or start getting its cues.
         guard let number = EosCueList.number(from: message) else { return }
-        guard let uuid = uuid(from: message) else { return }
+        guard let uuid = message.uuid() else { return }
         guard let list = database.list(with: uuid) else { return }
         list.updateWithCueListLinks(message: message)
-//        print("Sending Cue Count for List \(list.number)")
-        console.send(message: OSCMessage.eosGetCueCount(for: number)) // <- No Parts?
+        console.send(OSCMessage.eosGetCueCount(for: number)) // <- No Parts?
     }
     
     internal func cueCountForList(message: OSCMessage) {
@@ -83,13 +87,19 @@ class EosCuesMessageHandler {
         // Check whether we actually have the list in the database before we start getting all of the cues for it.
         // We're checking with database with the Cue List number, which isn't that nice but we don't have the index or UUID in this message.
         guard let number = EosCueList.number(from: message), let uNumber = UInt32(number), let list = database.list(with: uNumber) else { return }
-//        print("Receiving Cue Count \(count) for List \(list.number)")
         let cueProgress = Progress(totalUnitCount: Int64(count))
         cueProgresses[uNumber] = cueProgress
         listProgress?.addChild(cueProgress, withPendingUnitCount: 1)
+        
+        // Sending as OSCBundle
+//        let messages = (0..<count).map { OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\($0)") }
+//        let bundle = OSCBundle(with: messages)
+//        console.send(bundle)
+        
+        
+        // Sending as individual OSCMessages
         for index in 0..<count {
-//            print("Sending Get Cue \(index) for List \(list.number)")
-            console.send(message: OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\(index)"))
+            console.send(OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\(index)"))
         }
     }
     
@@ -101,7 +111,7 @@ class EosCuesMessageHandler {
 //        print("Receiving Cue Count \(count) for List \(list.number) (No Parts)")
         for index in 0..<count {
 //            print("Sending Get Cue \(index) for List \(list.number) (No Parts)")
-            console.send(message: OSCMessage.eosGetCueNoParts(with: "\(list.number)", andIndex: "\(index)"))
+            console.send(OSCMessage.eosGetCueNoParts(with: "\(list.number)", andIndex: "\(index)"))
         }
     }
     
@@ -117,7 +127,7 @@ class EosCuesMessageHandler {
     
     internal func cue(message: OSCMessage) {
         guard let number = EosCueList.number(from: message), let uNumber = UInt32(number) else { return }
-        guard let uuid = uuid(from: message) else { return }
+        guard let uuid = message.uuid() else { return }
         switch type(for: message) {
         case .cue:
             if let cue = database.cue(with: uuid, inListWithNumber: uNumber) {
@@ -127,8 +137,6 @@ class EosCuesMessageHandler {
             } else {
                 guard let cue = EosCue.cue(from: message) else { return }
                 let success = database.add(cue: cue, toListWithNumber: uNumber)
-                let list = database.lists.first(where: { $0.number == uNumber })
-//                print("Receiving Cue \(cue.number) in List \(list!.number)")
                 if !success {
                     // TODO: Maybe use Result type with different errors?
                     print("Couldn't find list for cue to be added to.")
@@ -142,13 +150,11 @@ class EosCuesMessageHandler {
         var currentProgress = cueProgress.completedUnitCount
         currentProgress += 1
         cueProgress.completedUnitCount = currentProgress
-//        print("Total Progress: \(listProgress?.fractionCompleted)")
-//        cueProgresses.forEach({ print("Cue List: \($0.key) Progress: \($0.value.fractionCompleted)") })
     }
     
     internal func cueNoParts(message: OSCMessage) {
         guard let number = EosCueList.number(from: message), let uNumber = UInt32(number) else { return }
-        guard let uuid = uuid(from: message) else { return }
+        guard let uuid = message.uuid() else { return }
         if let cue = database.cue(with: uuid, inListWithNumber: uNumber) {
             cue.updateWith(message: message)
             cue.updateNumbers(with: message)
@@ -156,8 +162,6 @@ class EosCuesMessageHandler {
         } else {
             guard let cue = EosCue.cue(from: message) else { return }
             let success = database.add(cue: cue, toListWithNumber: uNumber)
-            let list = database.lists.first(where: { $0.number == uNumber })
-//            print("Receiving Cue \(cue.number) in List \(list!.number)")
             if !success {
                 // TODO: Maybe use Result type with different errors?
                 print("Couldn't find list for cue to be added to.")
@@ -167,7 +171,7 @@ class EosCuesMessageHandler {
     
     private func cue(from message: OSCMessage) -> EosCue? {
         guard let number = EosCueList.number(from: message), let uNumber = UInt32(number) else { return nil }
-        guard let uuid = uuid(from: message) else { return nil }
+        guard let uuid = message.uuid() else { return nil }
         return database.cue(with: uuid, inListWithNumber: uNumber)
     }
     
@@ -213,26 +217,23 @@ class EosCuesMessageHandler {
 //        print("Receiving Part count \(count) for Cue \(cue!.number) in List \(list!.number)")
         for index in 0..<count where count > 0 {
 //            print("Sending get Part \(index) for Cue \(cue!.number) in List \(list!.number)")
-            console.send(message: OSCMessage.eosGetPart(with: listNumber, cue: cueNumber, andIndex: "\(index)"))
+            console.send(OSCMessage.eosGetPart(with: listNumber, cue: cueNumber, andIndex: "\(index)"))
         }
     }
     
     internal func part(message: OSCMessage) {
         guard let listNumber = EosCueList.number(from: message), let uListNumber = UInt32(listNumber) else { return }
         guard let cueNumber = EosCue.number(from: message), let dCueNumber = Double(cueNumber) else { return }
-        guard let uuid = uuid(from: message) else { return }
+        guard let uuid = message.uuid() else { return }
         if let part = database.part(with: uuid, inCueWithNumber: dCueNumber, inListWithNumber: uListNumber) {
             part.updateWith(message: message)
             part.updateNumbers(with: message)
         } else {
             guard let part = EosCuePart.part(from: message) else { return }
             let success = database.add(part: part, toCueWithNumber: dCueNumber, inListWithNumber: uListNumber)
-            let list = database.lists.first(where: { $0.number == UInt32(listNumber)! })
-            let cue = list!.cues.first(where: { $0.number == Double(cueNumber)! })
-//            print("Receiving Part \(part.number) for Cue \(cue!.number) in List \(list!.number)")
             if !success {
                 // TODO: Maybe use Result type with different errors?
-//                print("Couldn't find list or cue for part to be added to.")
+                print("Couldn't find list or cue for part to be added to.")
             }
         }
     }
@@ -240,7 +241,7 @@ class EosCuesMessageHandler {
     private func part(from message: OSCMessage) -> EosCuePart? {
         guard let listNumber = EosCueList.number(from: message), let uListNumber = UInt32(listNumber) else { return nil }
         guard let cueNumber = EosCue.number(from: message), let dCueNumber = Double(cueNumber) else { return nil }
-        guard let uuid = uuid(from: message) else { return nil }
+        guard let uuid = message.uuid() else { return nil }
         return database.part(with: uuid, inCueWithNumber: dCueNumber, inListWithNumber: uListNumber)
     }
     
@@ -259,11 +260,7 @@ class EosCuesMessageHandler {
         part.updateWithActions(message: message)
     }
     
-    private func uuid(from message: OSCMessage) -> UUID? {
-        guard  message.arguments.count >= 2 else { return nil }
-        guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
-        return uuid
-    }
+
 
 }
 

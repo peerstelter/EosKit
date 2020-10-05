@@ -1,5 +1,5 @@
 //
-//  EosOptionManagerProtocol.swift
+//  EosEffectsDatabase.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,20 +24,7 @@
 //  THE SOFTWARE.
 
 import Foundation
-import OSCKit
 
-internal protocol EosOptionManagerProtocol {
-    
-    var addressSpace: OSCAddressSpace { get }
-    func synchronise()
-    func take(message: OSCMessage)
-}
-
-extension EosOptionManagerProtocol {
-    
-    func take(message: OSCMessage) {
-        OSCAnnotation.annotation(for: message, with: .spaces, andType: true)
-        let _ = addressSpace.complete(with: message, priority: .string)
-    }
+internal class EosEffectsDatabase {
     
 }

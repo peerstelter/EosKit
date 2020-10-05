@@ -115,10 +115,10 @@ public final class EosConsole: NSObject, Identifiable {
     
     private var observationContext = 1
     private var progress = Progress(totalUnitCount: -1)
-    private var managerProgresses: [NSObject: Progress] = [:]
     public var progressHandler: ((Double, String, String) -> Void)?
     
     private var cuesManager: EosCuesManager?
+    private var patchManager: EosPatchManager?
     
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
@@ -260,7 +260,10 @@ public final class EosConsole: NSObject, Identifiable {
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
                 cuesManager?.synchronise()
             case .patch:
-                return
+                let managerProgress = Progress(totalUnitCount: 1)
+                patchManager = EosPatchManager(console: self, progress: managerProgress)
+                progress.addChild(managerProgress, withPendingUnitCount: 1)
+                patchManager?.synchronise()
             }
         })
     }
@@ -285,8 +288,8 @@ public final class EosConsole: NSObject, Identifiable {
         client.send(packet: message)
     }
     
-    internal func send(message: OSCMessage) {
-        client.send(packet: message)
+    internal func send(_ packet: OSCPacket) {
+        client.send(packet: packet)
     }
     
     // TODO: Not sure this is needed anymore...
@@ -307,11 +310,14 @@ extension EosConsole: OSCPacketDestination {
     }
     
     public func take(message: OSCMessage) {
+//        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         if message.isEosReply {
             let relativeAddress = message.addressWithoutEosReply()
             message.readdress(to: relativeAddress)
             if message.addressPattern.hasPrefix("/get/cue") {
                 cuesManager?.take(message: message)
+            } else if message.addressPattern.hasPrefix("/get/patch") {
+                patchManager?.take(message: message)
             } else {
                 guard let completionHandler = completionHandlers[relativeAddress] else { return }
                 completionHandlers.removeValue(forKey: relativeAddress)
