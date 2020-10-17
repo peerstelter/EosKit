@@ -1,5 +1,5 @@
 //
-//  EosPatchManager.swift
+//  EosBeamPalettesMessageHandler.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,33 +24,19 @@
 //  THE SOFTWARE.
 
 import Foundation
-import OSCKit
 
-internal final class EosPatchManager: EosOptionManagerProtocol {
+class EosBeamPalettesMessageHandler {
     
     private let console: EosConsole
-    internal let addressSpace = OSCAddressSpace()
-    private let database: EosPatchDatabase
-    private let handler: EosPatchMessageHandler
+    private let database: EosBeamPalettesDatabase
+    private var managerProgress: Progress?
+    private var listProgress: Progress?
+    private var cueProgresses: [UInt32 : Progress] = [:]
     
-    init(console: EosConsole, progress: Progress? = nil) {
+    init(console: EosConsole, database: EosBeamPalettesDatabase, progress: Progress? = nil) {
         self.console = console
-        self.database = EosPatchDatabase()
-        self.handler = EosPatchMessageHandler(console: console, database: self.database, progress: progress)
-        registerAddressSpace()
+        self.database = database
+        self.managerProgress = progress
     }
     
-    private func registerAddressSpace() {
-        let patchCountMethod = OSCAddressMethod(with: "/get/patch/count", andCompletionHandler: handler.patchCount(message:))
-        addressSpace.methods.insert(patchCountMethod)
-        let patchMethod = OSCAddressMethod(with: "/get/patch/*/*/list/*/*", andCompletionHandler: handler.patch(message:))
-        addressSpace.methods.insert(patchMethod)
-        let patchNotesMethod = OSCAddressMethod(with: "/get/patch/*/*/notes", andCompletionHandler: handler.patchNotes(message:))
-        addressSpace.methods.insert(patchNotesMethod)
-    }
-    
-    func synchronise() {
-        console.send(OSCMessage.eosGetPatchCount())
-    }
-
 }

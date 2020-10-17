@@ -1,5 +1,5 @@
 //
-//  EosPatchManager.swift
+//  EosGroup.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,31 +26,41 @@
 import Foundation
 import OSCKit
 
-internal final class EosPatchManager: EosOptionManagerProtocol {
+class EosGroup: Hashable {
     
-    private let console: EosConsole
-    internal let addressSpace = OSCAddressSpace()
-    private let database: EosPatchDatabase
-    private let handler: EosPatchMessageHandler
-    
-    init(console: EosConsole, progress: Progress? = nil) {
-        self.console = console
-        self.database = EosPatchDatabase()
-        self.handler = EosPatchMessageHandler(console: console, database: self.database, progress: progress)
-        registerAddressSpace()
+    static func == (lhs: EosGroup, rhs: EosGroup) -> Bool {
+        return lhs.number == rhs.number
     }
     
-    private func registerAddressSpace() {
-        let patchCountMethod = OSCAddressMethod(with: "/get/patch/count", andCompletionHandler: handler.patchCount(message:))
-        addressSpace.methods.insert(patchCountMethod)
-        let patchMethod = OSCAddressMethod(with: "/get/patch/*/*/list/*/*", andCompletionHandler: handler.patch(message:))
-        addressSpace.methods.insert(patchMethod)
-        let patchNotesMethod = OSCAddressMethod(with: "/get/patch/*/*/notes", andCompletionHandler: handler.patchNotes(message:))
-        addressSpace.methods.insert(patchNotesMethod)
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(number)
     }
     
-    func synchronise() {
-        console.send(OSCMessage.eosGetPatchCount())
+    let uuid: UUID      // Should never change.
+    var number: UInt32
+    var label: String
+    var channels: [UInt32] = []
+    
+    init(uuid: UUID, number: UInt32, label: String) {
+        self.uuid = uuid
+        self.number = number
+        self.label = label
     }
+    
+    internal static func group(from message: OSCMessage) -> EosGroup? {
+        guard let number = EosGroup.number(from: message), let uNumber = UInt32(number) else { return nil }
+        guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
+        guard let label = message.arguments[2] as? String else { return nil }
+        return EosGroup(uuid: uuid, number: uNumber, label: label)
+    }
+    
+    internal static func number(from message: OSCMessage) -> String? {
+        guard message.addressParts.count > 3 else { return nil }
+        return message.addressParts[2]
+    }
+    
+    internal func updateWithChannels(message: OSCMessage) {
 
+    }
+    
 }

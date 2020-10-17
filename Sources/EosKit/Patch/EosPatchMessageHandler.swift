@@ -59,14 +59,14 @@ class EosPatchMessageHandler {
     }
     
     private func part(from message: OSCMessage) -> EosChannelPart? {
-        guard let number = EosChannelPart.number(from: message), let uNumber = UInt32(number) else { return nil }
+        guard let number = EosChannel.number(from: message), let uNumber = UInt32(number) else { return nil }
         guard let uuid = message.uuid() else { return nil }
         return database.patch(with: uuid, inChannelWithNumber: uNumber)
     }
     
     internal func patch(message: OSCMessage) {
         if let channel = channel(from: message) {
-            channel.updateNumber(with: message)
+            channel.updateNumber(with: message) // I'm not convinced this needs to happen
             if let part = part(from: message) {
                 part.updateNumbers(with: message)
                 part.updateWith(message: message)
@@ -82,15 +82,15 @@ class EosPatchMessageHandler {
     }
     
     internal func patchNotes(message: OSCMessage) {
-        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
+        guard let part = part(from: message) else { return }
+        part.updateWithNotes(message: message)
     }
-    
     
 }
 
 extension OSCMessage {
     
-    // Getting the cue list count is triggered by the Cues Manager so needs to be internal.
+    // Getting the patch count is triggered by the Patch Manager so needs to be internal.
     static internal func eosGetPatchCount() -> OSCMessage {
         return OSCMessage(with: "/eos/get/patch/count", arguments: [])
     }

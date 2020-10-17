@@ -1,5 +1,5 @@
 //
-//  EosPatchManager.swift
+//  EosColorPalettesDatabase.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,33 +24,7 @@
 //  THE SOFTWARE.
 
 import Foundation
-import OSCKit
 
-internal final class EosPatchManager: EosOptionManagerProtocol {
+internal class EosColorPalettesDatabase {
     
-    private let console: EosConsole
-    internal let addressSpace = OSCAddressSpace()
-    private let database: EosPatchDatabase
-    private let handler: EosPatchMessageHandler
-    
-    init(console: EosConsole, progress: Progress? = nil) {
-        self.console = console
-        self.database = EosPatchDatabase()
-        self.handler = EosPatchMessageHandler(console: console, database: self.database, progress: progress)
-        registerAddressSpace()
-    }
-    
-    private func registerAddressSpace() {
-        let patchCountMethod = OSCAddressMethod(with: "/get/patch/count", andCompletionHandler: handler.patchCount(message:))
-        addressSpace.methods.insert(patchCountMethod)
-        let patchMethod = OSCAddressMethod(with: "/get/patch/*/*/list/*/*", andCompletionHandler: handler.patch(message:))
-        addressSpace.methods.insert(patchMethod)
-        let patchNotesMethod = OSCAddressMethod(with: "/get/patch/*/*/notes", andCompletionHandler: handler.patchNotes(message:))
-        addressSpace.methods.insert(patchNotesMethod)
-    }
-    
-    func synchronise() {
-        console.send(OSCMessage.eosGetPatchCount())
-    }
-
 }

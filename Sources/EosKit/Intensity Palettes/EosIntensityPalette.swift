@@ -1,5 +1,5 @@
 //
-//  EosEffectsMessageHandler.swift
+//  EosIntensityPalette.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,20 +24,3 @@
 //  THE SOFTWARE.
 
 import Foundation
-import OSCKit
-
-class EosEffectsMessageHandler {
-    
-    private let console: EosConsole
-    private let database: EosEffectsDatabase
-    private var managerProgress: Progress?
-    private var listProgress: Progress?
-    private var cueProgresses: [UInt32 : Progress] = [:]
-    
-    init(console: EosConsole, database: EosEffectsDatabase, progress: Progress? = nil) {
-        self.console = console
-        self.database = database
-        self.managerProgress = progress
-    }
-    
-}

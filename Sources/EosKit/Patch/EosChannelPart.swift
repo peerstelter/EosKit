@@ -46,7 +46,7 @@ class EosChannelPart: Hashable {
     var address: UInt32
     var intensityAddress: UInt32
     var currentLevel: Int32
-    var gel: EosOSCGel
+    var gel: EosOSCGel?
     var text1: String
     var text2: String
     var text3: String
@@ -58,8 +58,9 @@ class EosChannelPart: Hashable {
     var text9: String
     var text10: String
     var endAddress: UInt32
+    var notes: String = ""
     
-    internal init(channelNumber: UInt32, number: UInt32, uuid: UUID, label: String, fixtureManufacturer: String, fixtureModel: String, address: UInt32, intensityAddress: UInt32, currentLevel: Int32, gel: EosOSCGel, text1: String, text2: String, text3: String, text4: String, text5: String, text6: String, text7: String, text8: String, text9: String, text10: String, endAddress: UInt32) {
+    internal init(channelNumber: UInt32, number: UInt32, uuid: UUID, label: String, fixtureManufacturer: String, fixtureModel: String, address: UInt32, intensityAddress: UInt32, currentLevel: Int32, gel: EosOSCGel?, text1: String, text2: String, text3: String, text4: String, text5: String, text6: String, text7: String, text8: String, text9: String, text10: String, endAddress: UInt32) {
         self.channelNumber = channelNumber
         self.number = number
         self.uuid = uuid
@@ -94,7 +95,7 @@ class EosChannelPart: Hashable {
         guard let address = message.arguments[5] as? NSNumber, let uAddress = UInt32(exactly: address) else { return nil }
         guard let intensityAddress = message.arguments[6] as? NSNumber, let uIntensityAddress = UInt32(exactly: intensityAddress) else { return nil }
         guard let currentLevel = message.arguments[7] as? Int32 else { return nil }
-        guard let string = message.arguments[8] as? String, let gel = EosOSCGel.gel(from: string) else { return nil }
+        guard let string = message.arguments[8] as? String else { return nil }
         guard let text1 = message.arguments[9] as? String else { return nil }
         guard let text2 = message.arguments[10] as? String else { return nil }
         guard let text3 = message.arguments[11] as? String else { return nil }
@@ -106,7 +107,7 @@ class EosChannelPart: Hashable {
         guard let text9 = message.arguments[17] as? String else { return nil }
         guard let text10 = message.arguments[18] as? String else { return nil }
         guard let endAddress = message.arguments[20] as? NSNumber, let uEndAddress = UInt32(exactly: endAddress) else { return nil }
-        return EosChannelPart(channelNumber: uChannelNumber, number: uNumber, uuid: uuid, label: label, fixtureManufacturer: fixtureManufacturer, fixtureModel: fixtureModel, address: uAddress, intensityAddress: uIntensityAddress, currentLevel: currentLevel, gel: gel, text1: text1, text2: text2, text3: text3, text4: text4, text5: text5, text6: text6, text7: text7, text8: text8, text9: text9, text10: text10, endAddress: uEndAddress)
+        return EosChannelPart(channelNumber: uChannelNumber, number: uNumber, uuid: uuid, label: label, fixtureManufacturer: fixtureManufacturer, fixtureModel: fixtureModel, address: uAddress, intensityAddress: uIntensityAddress, currentLevel: currentLevel, gel: EosOSCGel.gel(from: string), text1: text1, text2: text2, text3: text3, text4: text4, text5: text5, text6: text6, text7: text7, text8: text8, text9: text9, text10: text10, endAddress: uEndAddress)
     }
     
     internal func updateWith(message: OSCMessage) {
@@ -118,7 +119,7 @@ class EosChannelPart: Hashable {
         OSCMessage.update(&address, withArgument: message.arguments[5])
         OSCMessage.update(&intensityAddress, withArgument: message.arguments[6])
         OSCMessage.update(&currentLevel, withArgument: message.arguments[7])
-        if let string = message.arguments[8] as? String, string != self.gel.oscGelString, let gel = EosOSCGel.gel(from: string){
+        if let string = message.arguments[8] as? String, string != self.gel?.oscGelString, let gel = EosOSCGel.gel(from: string){
             self.gel = gel
         }
         OSCMessage.update(&text1, withArgument: message.arguments[9])
@@ -146,6 +147,12 @@ class EosChannelPart: Hashable {
         if let number = EosChannelPart.number(from: message), let uNumber = UInt32(number), self.number != uNumber {
             self.number = uNumber
         }
+    }
+    
+    internal func updateWithNotes(message: OSCMessage) {
+        guard message.arguments.count >= 3 else { return }
+        guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid), self.uuid == uuid else { return }
+        OSCMessage.update(&notes, withArgument: message.arguments[2])
     }
 }
 

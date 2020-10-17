@@ -61,15 +61,15 @@ public enum EosConsoleType: String {
 }
 
 public enum EosConsoleOption: Int {
-    case cues
     case patch
+    case cues
     
     var filters: Set<String> {
         switch self {
-        case .cues:
-            return eosCuesFilters
         case .patch:
             return eosPatchFilters
+        case .cues:
+            return eosCuesFilters
         }
     }
 }
@@ -117,8 +117,22 @@ public final class EosConsole: NSObject, Identifiable {
     private var progress = Progress(totalUnitCount: -1)
     public var progressHandler: ((Double, String, String) -> Void)?
     
-    private var cuesManager: EosCuesManager?
     private var patchManager: EosPatchManager?
+    private var cuesManager: EosCuesManager?
+    private var groupsManager: EosGroupsManager?
+    private var macrosManager: EosMacrosManager?
+    private var subsManager: EosSubsManager?
+    private var presetsManager: EosPresetsManager?
+    private var intensityPalettesManager: EosIntensityPalettesManager?
+    private var focusPalettesManager: EosFocusPalettesManager?
+    private var colorPalettesManager: EosColorPalettesManager?
+    private var beamPalettesManager: EosBeamPalettesManager?
+    private var curvesManager: EosCurvesManager?
+    private var effectsManager: EosEffectsManager?
+    private var snapshotsManager: EosSnapshotsManager?
+    private var pixelMapsManager: EosPixelMapsManager?
+    private var magicSheetsManager: EosMagicSheetsManager?
+    private var setupsManager: EosSetupsManager?
     
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
@@ -228,12 +242,12 @@ public final class EosConsole: NSObject, Identifiable {
             filters = filters.union(filterChanges.add)
             filters = filters.subtracting(filterChanges.remove)
             // TODO: Check whether Eos can handle OSC Bundles...
-            // Eos consoles CAN? receive OSCBundles and EosKit sends them to reduce the amount of message sent on the network.
+            // Eos consoles can receive OSCBundles and EosKit sends them to reduce the amount of message sent on the network.
             // The elements within the OSCBundles are actioned upon synscronously by Eos consoles and reply will be as individual OSCMessages.
-//            client.send(packet: OSCBundle(bundleWithMessages: [OSCMessage(with: eosFiltersAdd, arguments: Array(filtersToAdd)),
-//                                                               OSCMessage(with: eosFiltersRemove, arguments: Array(filtersToRemove))]))
-            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
-            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove)))
+            client.send(packet: OSCBundle(with: [OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)),
+                                                               OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove))]))
+//            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
+//            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove)))
         case (false, true):
             filters = filters.union(filterChanges.add)
             client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
@@ -305,7 +319,7 @@ public final class EosConsole: NSObject, Identifiable {
 extension EosConsole: OSCPacketDestination {
     
     public func take(bundle: OSCBundle) {
-        // An eos family console doesn't send any OSC Bundles. It DOES? receive them though!
+        // An eos family console doesn't send any OSC Bundles. It does receive them though!
         return
     }
     
@@ -314,11 +328,24 @@ extension EosConsole: OSCPacketDestination {
         if message.isEosReply {
             let relativeAddress = message.addressWithoutEosReply()
             message.readdress(to: relativeAddress)
-            if message.addressPattern.hasPrefix("/get/cue") {
-                cuesManager?.take(message: message)
-            } else if message.addressPattern.hasPrefix("/get/patch") {
-                patchManager?.take(message: message)
-            } else {
+            switch message.addressPattern {
+            case _ where message.addressPattern.hasPrefix("/get/patch"): patchManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/cue"): cuesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/group"): groupsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/macro"): macrosManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/sub"): subsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/preset"): presetsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/ip"): intensityPalettesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/fp"): focusPalettesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/cp"): colorPalettesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/bp"): beamPalettesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/curve"): curvesManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/fx"): effectsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/snap"): snapshotsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/pixmap"): pixelMapsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/ms"): magicSheetsManager?.take(message: message)
+            case _ where message.addressPattern.hasPrefix("/get/setup"): setupsManager?.take(message: message)
+            default:
                 guard let completionHandler = completionHandlers[relativeAddress] else { return }
                 completionHandlers.removeValue(forKey: relativeAddress)
                 completionHandler(message)

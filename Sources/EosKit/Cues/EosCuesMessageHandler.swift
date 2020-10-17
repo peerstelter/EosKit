@@ -259,8 +259,6 @@ class EosCuesMessageHandler {
         guard let part = part(from: message) else { return }
         part.updateWithActions(message: message)
     }
-    
-
 
 }
 
