@@ -27,4 +27,6 @@ import Foundation
 
 internal class EosMacrosDatabase {
     
+    var macros: Set<EosMacro> = []
+    
 }

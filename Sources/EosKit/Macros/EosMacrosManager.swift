@@ -41,11 +41,16 @@ internal final class EosMacrosManager: EosOptionManagerProtocol {
     }
     
     private func registerAddressSpace() {
-
+        let macroCountMethod = OSCAddressMethod(with: "/get/macro/count", andCompletionHandler: handler.macroCount(message:))
+        addressSpace.methods.insert(macroCountMethod)
+        let macroMethod = OSCAddressMethod(with: "/get/macro/*/list/*/*", andCompletionHandler: handler.macro(message:))
+        addressSpace.methods.insert(macroMethod)
+        let macroCommandTextMethod = OSCAddressMethod(with: "/get/macro/*/text/list/*/*", andCompletionHandler: handler.macroCommandText(message:))
+        addressSpace.methods.insert(macroCommandTextMethod)
     }
     
     func synchronise() {
-
+        console.send(OSCMessage.eosGetMacroCount())
     }
     
 }

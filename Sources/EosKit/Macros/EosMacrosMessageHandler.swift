@@ -24,14 +24,15 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
 
 class EosMacrosMessageHandler {
     
     private let console: EosConsole
     private let database: EosMacrosDatabase
     private var managerProgress: Progress?
-    private var listProgress: Progress?
-    private var cueProgresses: [UInt32 : Progress] = [:]
+    private var macrosProgress: Progress?
+    internal var sectionOneSections: [UUID:EosMacroSectionOne] = [:]
     
     init(console: EosConsole, database: EosMacrosDatabase, progress: Progress? = nil) {
         self.console = console
@@ -39,4 +40,45 @@ class EosMacrosMessageHandler {
         self.managerProgress = progress
     }
     
+    internal func macroCount(message: OSCMessage) -> () {
+        guard let count = message.arguments[0] as? Int32 else { return }
+        macrosProgress = Progress(totalUnitCount: Int64(count))
+        managerProgress?.addChild(macrosProgress!, withPendingUnitCount: 1)
+        for index in 0..<count {
+            console.send(OSCMessage.eosGetMacro(with: "\(index)"))
+        }
+    }
+    
+    internal func macro(message: OSCMessage) {
+        guard let section = EosMacroSectionOne(message: message) else { return }
+        sectionOneSections[section.uuid] = section
+    }
+    
+    internal func macroCommandText(message: OSCMessage) {
+        guard let sectionTwo = EosMacroSectionTwo(message: message),
+              let sectionOne = sectionOneSections[sectionTwo.uuid]
+        else { return }
+        let macro = EosMacro(sectionOne: sectionOne, sectionTwo: sectionTwo)
+        database.macros.insert(macro)
+        sectionOneSections[sectionTwo.uuid] = nil
+        guard let macrosProgress = macrosProgress else { return }
+        var currentProgress = macrosProgress.completedUnitCount
+        currentProgress += 1
+        macrosProgress.completedUnitCount = currentProgress
+        print("Macros Progress: \(macrosProgress.completedUnitCount) / \(macrosProgress.totalUnitCount)")
+    }
+    
+}
+
+extension OSCMessage {
+    
+    // Getting the group count is triggered by the Macros Manager so needs to be internal.
+    static internal func eosGetMacroCount() -> OSCMessage {
+        return OSCMessage(with: "/eos/get/macro/count", arguments: [])
+    }
+    
+    static fileprivate func eosGetMacro(with index: String) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/macro/index/\(index)", arguments: [])
+    }
+
 }

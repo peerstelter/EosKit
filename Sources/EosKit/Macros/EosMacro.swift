@@ -24,3 +24,59 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
+
+struct EosMacro: EosTarget, Hashable {
+    
+    let number: UInt32
+    let uuid: UUID
+    let label: String
+    let mode: String
+    let commandText: String
+    
+    internal init(sectionOne: EosMacroSectionOne, sectionTwo: EosMacroSectionTwo) {
+        self.number = sectionOne.number
+        self.uuid = sectionOne.uuid
+        self.label = sectionOne.label
+        self.mode = sectionOne.mode
+        self.commandText = sectionTwo.commandText
+    }
+    
+}
+
+internal struct EosMacroSectionOne {
+    let number: UInt32
+    let uuid: UUID
+    let label: String
+    let mode: String
+    
+    init?(message: OSCMessage) {
+        guard let number = EosMacro.number(from: message),
+              let uNumber = UInt32(number),
+              let uuid = EosMacro.uuid(from: message),
+              let label = message.arguments[2] as? String,
+              let mode = message.arguments[3] as? String
+        else { return nil }
+        self.number = uNumber
+        self.uuid = uuid
+        self.label = label
+        self.mode = mode
+    }
+}
+
+internal struct EosMacroSectionTwo {
+    let number: UInt32
+    let uuid: UUID
+    let commandText: String
+    
+    init?(message: OSCMessage) {
+        guard let number = EosMacro.number(from: message),
+              let uNumber = UInt32(number),
+              let uuid = EosMacro.uuid(from: message),
+              let commandText = message.arguments[2] as? String
+        else { return nil }
+        self.number = uNumber
+        self.uuid = uuid
+        self.commandText = commandText
+    }
+}
