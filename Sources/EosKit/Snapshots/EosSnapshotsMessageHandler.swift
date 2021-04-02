@@ -24,14 +24,14 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
 
 class EosSnapshotsMessageHandler {
     
     private let console: EosConsole
     private let database: EosSnapshotsDatabase
     private var managerProgress: Progress?
-    private var listProgress: Progress?
-    private var cueProgresses: [UInt32 : Progress] = [:]
+    private var snapshotsProgress: Progress?
     
     init(console: EosConsole, database: EosSnapshotsDatabase, progress: Progress? = nil) {
         self.console = console
@@ -39,4 +39,31 @@ class EosSnapshotsMessageHandler {
         self.managerProgress = progress
     }
     
+    internal func snapshotCount(message: OSCMessage) -> () {
+        guard let count = message.arguments[0] as? Int32 else { return }
+        snapshotsProgress = Progress(totalUnitCount: Int64(count))
+        managerProgress?.addChild(snapshotsProgress!, withPendingUnitCount: 1)
+        for index in 0..<count {
+            console.send(OSCMessage.eosGetSnapshot(with: "\(index)"))
+        }
+    }
+    
+    internal func snapshot(message: OSCMessage) {
+        guard let snapshot = EosSnapshot(message: message) else { return }
+        database.snapshots.insert(snapshot)
+    }
+    
+}
+
+extension OSCMessage {
+    
+    // Getting the snapshot count is triggered by the Snapshots Manager so needs to be internal.
+    static internal func eosGetSnapshotCount() -> OSCMessage {
+        return OSCMessage(with: "/eos/get/snap/count", arguments: [])
+    }
+    
+    static fileprivate func eosGetSnapshot(with index: String) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/snap/index/\(index)", arguments: [])
+    }
+
 }

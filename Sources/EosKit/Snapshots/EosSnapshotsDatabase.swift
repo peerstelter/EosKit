@@ -27,4 +27,6 @@ import Foundation
 
 internal class EosSnapshotsDatabase {
     
+    var snapshots: Set<EosSnapshot> = []
+    
 }

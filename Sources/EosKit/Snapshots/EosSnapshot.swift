@@ -24,3 +24,23 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
+
+public struct EosSnapshot: EosTarget, Hashable {
+    
+    let number: Double
+    let uuid: UUID
+    let label: String
+    
+    init?(message: OSCMessage) {
+        guard let number = EosSnapshot.number(from: message),
+              let double = Double(number),
+              let uuid = EosSnapshot.uuid(from: message),
+              let label = message.arguments[2] as? String
+        else { return nil }
+        self.number = double
+        self.uuid = uuid
+        self.label = label
+    }
+
+}

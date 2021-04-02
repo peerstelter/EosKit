@@ -41,11 +41,14 @@ internal final class EosSnapshotsManager: EosOptionManagerProtocol {
     }
     
     private func registerAddressSpace() {
-
+        let snapshotCountMethod = OSCAddressMethod(with: "/get/snap/count", andCompletionHandler: handler.snapshotCount(message:))
+        addressSpace.methods.insert(snapshotCountMethod)
+        let snapshotMethod = OSCAddressMethod(with: "/get/snap/*/list/*/*", andCompletionHandler: handler.snapshot(message:))
+        addressSpace.methods.insert(snapshotMethod)
     }
     
     func synchronise() {
-
+        console.send(OSCMessage.eosGetSnapshotCount())
     }
     
 }
