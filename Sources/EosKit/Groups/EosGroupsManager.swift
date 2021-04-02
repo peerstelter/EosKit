@@ -50,6 +50,7 @@ internal final class EosGroupsManager: EosOptionManagerProtocol {
     }
     
     func synchronise() {
+        handler.sectionOneSections.removeAll()
         console.send(OSCMessage.eosGetGroupCount())
     }
     

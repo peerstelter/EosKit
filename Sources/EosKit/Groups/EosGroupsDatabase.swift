@@ -27,15 +27,6 @@ import Foundation
 
 internal class EosGroupsDatabase {
  
-    private (set) public var groups: Set<EosGroup> = []
-    
-    internal func add(group: EosGroup) {
-        groups.insert(group)
-    }
-    
-    internal func remove(group: EosGroup) {
-        groups.remove(group)
-    }
-    
+    var groups: Set<EosGroup> = []
     
 }

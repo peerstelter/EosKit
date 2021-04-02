@@ -26,41 +26,59 @@
 import Foundation
 import OSCKit
 
-class EosGroup: Hashable {
+public struct EosGroup: EosTarget, Hashable {
     
-    static func == (lhs: EosGroup, rhs: EosGroup) -> Bool {
-        return lhs.number == rhs.number
+    let number: Double
+    let uuid: UUID
+    let label: String
+    let channels: Set<Double>
+    
+    internal init(sectionOne: EosGroupSectionOne, sectionTwo: EosGroupSectionTwo) {
+        self.number = sectionOne.number
+        self.uuid = sectionOne.uuid
+        self.label = sectionOne.label
+        self.channels = sectionTwo.channels
     }
+
+}
+
+internal struct EosGroupSectionOne {
     
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(number)
-    }
+    let number: Double
+    let uuid: UUID
+    let label: String
     
-    let uuid: UUID      // Should never change.
-    var number: UInt32
-    var label: String
-    var channels: [UInt32] = []
-    
-    init(uuid: UUID, number: UInt32, label: String) {
+    init?(message: OSCMessage) {
+        guard let number = EosGroup.number(from: message),
+              let double = Double(number),
+              let uuid = EosGroup.uuid(from: message),
+              let label = message.arguments[2] as? String
+        else { return nil }
+        self.number = double
         self.uuid = uuid
-        self.number = number
         self.label = label
     }
-    
-    internal static func group(from message: OSCMessage) -> EosGroup? {
-        guard let number = EosGroup.number(from: message), let uNumber = UInt32(number) else { return nil }
-        guard let uid = message.arguments[1] as? String, let uuid = UUID(uuidString: uid) else { return nil }
-        guard let label = message.arguments[2] as? String else { return nil }
-        return EosGroup(uuid: uuid, number: uNumber, label: label)
-    }
-    
-    internal static func number(from message: OSCMessage) -> String? {
-        guard message.addressParts.count > 3 else { return nil }
-        return message.addressParts[2]
-    }
-    
-    internal func updateWithChannels(message: OSCMessage) {
+}
 
+internal struct EosGroupSectionTwo {
+    
+    let number: Double
+    let uuid: UUID
+    let channels: Set<Double>
+    
+    init?(message: OSCMessage) {
+        guard let number = EosGroup.number(from: message),
+              let double = Double(number),
+              let uuid = EosGroup.uuid(from: message)
+        else { return nil }
+        var channelsList: Set<Double> = []
+        for argument in message.arguments[2...] where message.arguments.count >= 3 {
+            let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            channelsList = channelsList.union(channelsAsDoubles)
+        }
+        self.number = double
+        self.uuid = uuid
+        self.channels = channelsList
     }
     
 }

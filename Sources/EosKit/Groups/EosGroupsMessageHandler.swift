@@ -31,7 +31,8 @@ class EosGroupsMessageHandler {
     private let console: EosConsole
     private let database: EosGroupsDatabase
     private var managerProgress: Progress?
-    private var groupProgress: Progress?
+    private var groupsProgress: Progress?
+    internal var sectionOneSections: [UUID:EosGroupSectionOne] = [:]
     
     init(console: EosConsole, database: EosGroupsDatabase, progress: Progress? = nil) {
         self.console = console
@@ -41,37 +42,30 @@ class EosGroupsMessageHandler {
     
     internal func groupCount(message: OSCMessage) -> () {
         guard let count = message.arguments[0] as? Int32 else { return }
-        groupProgress = Progress(totalUnitCount: Int64(count))
-        managerProgress?.addChild(groupProgress!, withPendingUnitCount: 1)
+        groupsProgress = Progress(totalUnitCount: Int64(count))
+        managerProgress?.addChild(groupsProgress!, withPendingUnitCount: 1)
         for index in 0..<count {
             console.send(OSCMessage.eosGetGroup(with: "\(index)"))
         }
     }
     
-    private func group(from message: OSCMessage) -> EosGroup? {
-        guard let number = EosGroup.number(from: message), let uNumber = UInt32(number) else { return nil }
-        return database.groups.first(where: { $0.number == uNumber })
-    }
-    
     internal func group(message: OSCMessage) {
-//        if let group = group(from: message) {
-//            channel.updateNumber(with: message)
-//            if let part = part(from: message) {
-//                part.updateNumbers(with: message)
-//                part.updateWith(message: message)
-//            } else {
-//                guard let part = EosChannelPart.part(from: message) else { return }
-//                channel.parts.insert(part)
-//            }
-//        } else {
-//            guard let channel = EosChannel.channel(from: message), let part = EosChannelPart.part(from: message) else { return }
-//            database.add(channel: channel)
-//            channel.parts.insert(part)
-//        }
+        guard let section = EosGroupSectionOne(message: message) else { return }
+        sectionOneSections[section.uuid] = section
     }
     
     internal func groupChannels(message: OSCMessage) {
-        
+        guard let sectionTwo = EosGroupSectionTwo(message: message),
+              let sectionOne = sectionOneSections[sectionTwo.uuid]
+        else { return }
+        let group = EosGroup(sectionOne: sectionOne, sectionTwo: sectionTwo)
+        database.groups.insert(group)
+        sectionOneSections[sectionTwo.uuid] = nil
+        guard let groupProgress = groupsProgress else { return }
+        var currentProgress = groupProgress.completedUnitCount
+        currentProgress += 1
+        groupProgress.completedUnitCount = currentProgress
+        print("Group Progress: \(groupProgress.completedUnitCount) / \(groupProgress.totalUnitCount)")
     }
     
 }
