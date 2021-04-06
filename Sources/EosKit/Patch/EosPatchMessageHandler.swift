@@ -65,8 +65,9 @@ class EosPatchMessageHandler {
     }
     
     internal func patch(message: OSCMessage) {
+                print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         if let channel = channel(from: message) {
-            channel.updateNumber(with: message) // I'm not convinced this needs to happen
+//            channel.updateNumber(with: message) // I'm not convinced this needs to happen
             if let part = part(from: message) {
                 part.updateNumbers(with: message)
                 part.updateWith(message: message)

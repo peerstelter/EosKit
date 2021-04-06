@@ -58,6 +58,19 @@ extension OSCMessage {
         return uuid
     }
     
+    internal func number() -> String? {
+        guard self.addressParts.count > 3 else { return nil }
+        return self.addressParts[2]
+    }
+    
+    static internal func getCount(for target: EosConsoleTarget) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/count", arguments: [])
+    }
+    
+    static internal func get(index: Int32, forTarget target: EosConsoleTarget) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/index/\(index)", arguments: [])
+    }
+    
     internal static func update(_ bool: inout Bool, withArgument argument: Any) {
         if let item = argument as? OSCArgument {
             let boolItem = item == .oscTrue

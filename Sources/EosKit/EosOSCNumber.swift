@@ -29,14 +29,14 @@ import Foundation
 internal class EosOSCNumber {
     
     /*
-     Eos target numbers will be sent as 32-bit integers when possible. If they are not whole numbers (ex: Cue 1.23) then they will be sent as strings.
-     E.g.
-     10
-     “1.23”
+     Eos target numbers will be sent as 32-bit integers when possible.
+     If they are not whole numbers (ex: Cue 1.23) then they will be sent
+     as strings.
+     E.g. 10“1.23”
      
-     When a range numbers contains 2 or more consecutive whole numbers, they will be represented as strings in the following format: X-Y
-     E.g.
-     “1-100”
+     When a range numbers contains 2 or more consecutive whole numbers,
+     they will be represented as strings in the following format: X-Y
+     E.g. “1-100”
      */
 
     // MARK: - Helper
@@ -47,7 +47,9 @@ internal class EosOSCNumber {
         } else if let number = numbersAndRanges as? String {
             if number.contains("-") {
                 let rangeArray = number.components(separatedBy: "-")
-                guard let firstNumber = rangeArray.first, let firstInt = Int(firstNumber), let lastNumber = rangeArray.last, let lastInt = Int(lastNumber), rangeArray.count == 2 else { return [] }
+                guard let firstNumber = rangeArray.first, let firstInt = Int(firstNumber),
+                      let lastNumber = rangeArray.last,
+                      let lastInt = Int(lastNumber), rangeArray.count == 2 else { return [] }
                 return Array(firstInt...lastInt).map { Double($0) }
             }
             if let oscNumber = Double(number) {

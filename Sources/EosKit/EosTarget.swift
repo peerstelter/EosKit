@@ -8,22 +8,14 @@
 import Foundation
 import OSCKit
 
-internal protocol EosTarget {
+internal protocol EosTarget: Hashable {
+    
+    static var stepCount: Int { get }
+    static var target: EosConsoleTarget { get }
+    
     var uuid: UUID { get }  // Should never change.
-    static func uuid(from message: OSCMessage) -> UUID?
-    static func number(from message: OSCMessage) -> String?
+    
+    init?(messages: [OSCMessage])
+    
 }
 
-extension EosTarget {
-    
-    static func uuid(from message: OSCMessage) -> UUID? {
-        guard let id = message.arguments[1] as? String, let uuid = UUID(uuidString: id) else { return nil }
-        return uuid
-    }
-    
-    internal static func number(from message: OSCMessage) -> String? {
-        guard message.addressParts.count > 3 else { return nil }
-        return message.addressParts[2]
-    }
-    
-}

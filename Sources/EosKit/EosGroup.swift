@@ -1,5 +1,5 @@
 //
-//  EosPatchManager.swift
+//  EosGroup.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,31 +26,34 @@
 import Foundation
 import OSCKit
 
-internal final class EosPatchManager: EosTargetManagerProtocol {
-    
-    private let console: EosConsole
-    internal let addressSpace = OSCAddressSpace()
-    private let database: EosPatchDatabase
-    private let handler: EosPatchMessageHandler
-    
-    init(console: EosConsole, progress: Progress? = nil) {
-        self.console = console
-        self.database = EosPatchDatabase()
-        self.handler = EosPatchMessageHandler(console: console, database: self.database, progress: progress)
-        registerAddressSpace()
-    }
-    
-    private func registerAddressSpace() {
-        let patchCountMethod = OSCAddressMethod(with: "/get/patch/count", andCompletionHandler: handler.patchCount(message:))
-        addressSpace.methods.insert(patchCountMethod)
-        let patchMethod = OSCAddressMethod(with: "/get/patch/*/*/list/*/*", andCompletionHandler: handler.patch(message:))
-        addressSpace.methods.insert(patchMethod)
-        let patchNotesMethod = OSCAddressMethod(with: "/get/patch/*/*/notes", andCompletionHandler: handler.patchNotes(message:))
-        addressSpace.methods.insert(patchNotesMethod)
-    }
-    
-    func synchronise() {
-        console.send(OSCMessage.eosGetPatchCount())
-    }
+public struct EosGroup: EosTarget, Hashable {
 
+    static internal var stepCount: Int = 2
+    static internal let target: EosConsoleTarget = .group
+    let number: Double
+    let uuid: UUID
+    let label: String
+    let channels: Set<Double>
+    
+    init?(messages: [OSCMessage]) {
+        guard messages.count == Self.stepCount,
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
+              let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
+              let number = indexMessage.number(), number == channelsMessage.number(),
+              let double = Double(number),
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String
+        else { return nil }
+        self.number = double
+        self.uuid = uuid
+        self.label = label
+        var channelsList: Set<Double> = []
+        for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
+            let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            channelsList = channelsList.union(channelsAsDoubles)
+        }
+        self.channels = channelsList
+    }
+    
 }
+

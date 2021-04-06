@@ -29,7 +29,7 @@ internal struct EosFilterChanges {
     let add: Set<String>
     let remove: Set<String>
     
-    init(with changes: EosOptionChanges) {
+    init(with changes: EosTargetChanges) {
         var addFilters: Set<String> = []
         var removeFilters: Set<String> = []
         

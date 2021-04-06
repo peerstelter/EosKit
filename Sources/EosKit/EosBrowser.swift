@@ -186,7 +186,7 @@ extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
 //        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
-        guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count == 2 else { return }
+        guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count >= 2 else { return }
         if var foundConsoles = consoles[interface], let index = foundConsoles.firstIndex(where: { $0.console.host == host }) {
             // MARK: Console Still Online
 //            print("Still Online: \(interface) : \(host)")

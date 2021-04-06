@@ -53,10 +53,12 @@ class EosCuesMessageHandler {
         managerProgress?.addChild(listProgress!, withPendingUnitCount: 1)
         
         // Sending as OSCBundle
-//        let messages = (0..<count).map { OSCMessage.eosGetCueList(with: "\($0)") }
-//        let bundle = OSCBundle(with: messages)
-//        console.send(bundle)
-        
+//        let messages = (0..<count).map { OSCMessage.eosGetCueList(with: "\($0)") }.chunked(into: 10)
+//        messages.forEach {
+//            let bundle = OSCBundle(with: $0)
+//            console.send(bundle)
+//        }
+
         // Sending as individual OSCMessages
         for index in 0..<count {
             console.send(OSCMessage.eosGetCueList(with: "\(index)"))
@@ -88,15 +90,18 @@ class EosCuesMessageHandler {
         // We're checking with database with the Cue List number, which isn't that nice but we don't have the index or UUID in this message.
         guard let number = EosCueList.number(from: message), let uNumber = UInt32(number), let list = database.list(with: uNumber) else { return }
         let cueProgress = Progress(totalUnitCount: Int64(count))
+        print("Cue Total Unit Count = \(cueProgress.totalUnitCount)")
         cueProgresses[uNumber] = cueProgress
         listProgress?.addChild(cueProgress, withPendingUnitCount: 1)
         
         // Sending as OSCBundle
-//        let messages = (0..<count).map { OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\($0)") }
-//        let bundle = OSCBundle(with: messages)
-//        console.send(bundle)
-        
-        
+//        let messages = (0..<count).map { OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\($0)") }.chunked(into: 10)
+//        messages.forEach {
+//            let bundle = OSCBundle(with: $0)
+//            console.send(bundle)
+//
+//        }
+
         // Sending as individual OSCMessages
         for index in 0..<count {
             console.send(OSCMessage.eosGetCue(with: "\(list.number)", andIndex: "\(index)"))
@@ -150,6 +155,7 @@ class EosCuesMessageHandler {
         var currentProgress = cueProgress.completedUnitCount
         currentProgress += 1
         cueProgress.completedUnitCount = currentProgress
+        print("Cue Progress: \(cueProgress.completedUnitCount) / \(cueProgress.totalUnitCount)")
     }
     
     internal func cueNoParts(message: OSCMessage) {
@@ -266,35 +272,43 @@ extension OSCMessage {
     
     // Getting the cue list count is triggered by the Cues Manager so needs to be internal.
     static internal func eosGetCueListCount() -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cuelist/count", arguments: [])
+        return OSCMessage(with: "/eos/get/cuelist/count")
     }
     
     static fileprivate func eosGetCueList(with index: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cuelist/index/\(index)", arguments: [])
+        return OSCMessage(with: "/eos/get/cuelist/index/\(index)")
     }
     
     static fileprivate func eosGetCueCount(for list: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/count", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/count")
     }
     
     static fileprivate func eosGetCueCountNoParts(for list: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/noparts/count", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/noparts/count")
     }
     
     static fileprivate func eosGetCue(with list: String, andIndex index: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/index/\(index)", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/index/\(index)")
     }
     
     static fileprivate func eosGetCueNoParts(with list: String, andIndex index: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/noparts/index/\(index)", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/noparts/index/\(index)")
     }
     
     static fileprivate func eosGetPartCount(for list: String, andCue cue: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/\(cue)/count", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/\(cue)/count")
     }
     
     static fileprivate func eosGetPart(with list:String, cue: String, andIndex index: String) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/cue/\(list)/\(cue)/index/\(index)", arguments: [])
+        return OSCMessage(with: "/eos/get/cue/\(list)/\(cue)/index/\(index)")
     }
 
+}
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
+    }
 }

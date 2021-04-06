@@ -43,85 +43,85 @@ internal let eosRequestPrefix = "/eos"
 internal let eosReplyPrefix = "/eos/out"
 internal let eosPingRequest = "/ping"
 
-internal let eosSystemFilters: Set = ["/eos/out/get/version",
-                                      "/eos/out/ping",
-                                      "/eos/out/filter/add",
-                                      "/eos/out/filter/remove"]
+internal let eosSystemFilters: Set = ["/get/version",
+                                      "/ping",
+                                      "/filter/add",
+                                      "/filter/remove"]
 
-internal let eosPatchFilters: Set = ["/eos/out/get/patch/count",
-                                     "/eos/out/get/patch/*/*/list/*/*",
-                                     "/eos/out/get/patch/*/*/notes"]
+internal let eosPatchFilters: Set = ["/get/patch/count",
+                                     "/get/patch/*/*/list/*/*",
+                                     "/get/patch/*/*/notes"]
 
 // TODO: Comment out the noparts methods if we are no longer using them in the cue sync process.
-internal let eosCuesFilters: Set = ["/eos/out/get/cuelist/count",
-                                   "/eos/out/get/cuelist/*/list/*/*",
-                                   "/eos/out/get/cuelist/*/links/list/*/*",
-                                   "/eos/out/get/cue/*/count",
-                                   "/eos/out/get/cue/*/noparts/count",
-                                   "/eos/out/get/cue/*/*/noparts/list/*/*",
-                                   "/eos/out/get/cue/*/*/noparts/fx/list/*/*",
-                                   "/eos/out/get/cue/*/*/noparts/links/list/*/*",
-                                   "/eos/out/get/cue/*/*/noparts/actions/list/*/*",
-                                   "/eos/out/get/cue/*/*/count",
-                                   "/eos/out/get/cue/*/*/*/list/*/*",
-                                   "/eos/out/get/cue/*/*/*/fx/list/*/*",
-                                   "/eos/out/get/cue/*/*/*/links/list/*/*",
-                                   "/eos/out/get/cue/*/*/*/actions/list/*/*"]
+internal let eosCueFilters: Set = ["/get/cuelist/count",
+                                   "/get/cuelist/*/list/*/*",
+                                   "/get/cuelist/*/links/list/*/*",
+                                   "/get/cue/*/count",
+                                   "/get/cue/*/noparts/count",
+                                   "/get/cue/*/*/noparts/list/*/*",
+                                   "/get/cue/*/*/noparts/fx/list/*/*",
+                                   "/get/cue/*/*/noparts/links/list/*/*",
+                                   "/get/cue/*/*/noparts/actions/list/*/*",
+                                   "/get/cue/*/*/count",
+                                   "/get/cue/*/*/*/list/*/*",
+                                   "/get/cue/*/*/*/fx/list/*/*",
+                                   "/get/cue/*/*/*/links/list/*/*",
+                                   "/get/cue/*/*/*/actions/list/*/*"]
 
-internal let eosGroupsFilters: Set = ["/eos/out/get/group/count",
-                                      "/eos/get/group/*/list/*/*",
-                                      "/eos/get/group/*/channels/list/*/*"]
+internal let eosGroupFilters: Set = ["/get/group/count",
+                                      "/get/group/*/list/*/*",
+                                      "/get/group/*/channels/list/*/*"]
 
-internal let eosMacrosFilters: Set = ["/eos/out/get/macro/count",
-                                      "/eos/get/macro/*/list/*/*",
-                                      "/eos/get/macro/*/text/list/*/*"]
+internal let eosMacroFilters: Set = ["/get/macro/count",
+                                      "/get/macro/*/list/*/*",
+                                      "/get/macro/*/text/list/*/*"]
 
-internal let eosSubsFilters: Set = ["/eos/get/sub/count",
-                                    "/eos/get/sub/*/list/*/*",
-                                    "/eos/get/sub/*/fx/list/*/*"]
+internal let eosSubFilters: Set = ["/get/sub/count",
+                                   "/get/sub/*/list/*/*",
+                                   "/get/sub/*/fx/list/*/*"]
 
-internal let eosPresetsFilters: Set = ["/eos/get/preset/count",
-                                       "/eos/get/preset/*/list/*/*",
-                                       "/eos/get/preset/*/channels/list/*/*",
-                                       "/eos/get/preset/*/byType/list/*/*",
-                                       "/eos/get/preset/*/fx/list/*/*"]
+internal let eosPresetFilters: Set = ["/get/preset/count",
+                                      "/get/preset/*/list/*/*",
+                                      "/get/preset/*/channels/list/*/*",
+                                      "/get/preset/*/byType/list/*/*",
+                                      "/get/preset/*/fx/list/*/*"]
 
-internal let eosIntensityPalettesFilters: Set = ["/eos/get/ip/count",
-                                                 "/eos/get/ip/*/list/*/*",
-                                                 "/eos/get/ip/*/channels/list/*/*",
-                                                 "/eos/get/ip/*/byType/list/*/*"]
+internal let eosIntensityPaletteFilters: Set = ["/get/ip/count",
+                                                "/get/ip/*/list/*/*",
+                                                "/get/ip/*/channels/list/*/*",
+                                                "/get/ip/*/byType/list/*/*"]
 
-internal let eosFocusPalettesFilters: Set = ["/eos/get/fp/count",
-                                             "/eos/get/fp/*/list/*/*",
-                                             "/eos/get/fp/*/channels/list/*/*",
-                                             "/eos/get/fp/*/byType/list/*/*"]
+internal let eosFocusPaletteFilters: Set = ["/get/fp/count",
+                                            "/get/fp/*/list/*/*",
+                                            "/get/fp/*/channels/list/*/*",
+                                            "/get/fp/*/byType/list/*/*"]
 
-internal let eosColorPalettesFilters: Set = ["/eos/get/cp/count",
-                                             "/eos/get/cp/*/list/*/*",
-                                             "/eos/get/cp/*/channels/list/*/*",
-                                             "/eos/get/cp/*/byType/list/*/*"]
+internal let eosColorPaletteFilters: Set = ["/get/cp/count",
+                                            "/get/cp/*/list/*/*",
+                                            "/get/cp/*/channels/list/*/*",
+                                            "/get/cp/*/byType/list/*/*"]
 
-internal let eosBeamPalettesFilters: Set = ["/eos/get/bp/count",
-                                            "/eos/get/bp/*/list/*/*",
-                                            "/eos/get/bp/*/channels/list/*/*",
-                                            "/eos/get/bp/*/byType/list/*/*"]
+internal let eosBeamPaletteFilters: Set = ["/get/bp/count",
+                                           "/get/bp/*/list/*/*",
+                                           "/get/bp/*/channels/list/*/*",
+                                           "/get/bp/*/byType/list/*/*"]
 
-internal let eosCurvesFilters: Set = ["/eos/get/curve/count",
-                                      "/eos/get/curve/*/list/*/*"]
+internal let eosCurveFilters: Set = ["/get/curve/count",
+                                     "/get/curve/*/list/*/*"]
 
-internal let eosEffectsFilters: Set = ["/eos/get/fx/count",
-                                       "/eos/get/fx/*/list/*/*"]
+internal let eosEffectFilters: Set = ["/get/fx/count",
+                                      "/get/fx/*/list/*/*"]
 
-internal let eosSnapshotsFilters: Set = ["/eos/get/snap/count",
-                                         "/eos/get/snap/*/list/*/*"]
+internal let eosSnapshotFilters: Set = ["/get/snap/count",
+                                        "/get/snap/*/list/*/*"]
 
-internal let eosPixelMapsFilters: Set = ["/eos/get/pixmap/count",
-                                         "/eos/get/pixmap/*/list/*/*",
-                                         "/eos/get/pixmap/*/channels/list/*/*"]
+internal let eosPixelMapFilters: Set = ["/get/pixmap/count",
+                                        "/get/pixmap/*/list/*/*",
+                                        "/get/pixmap/*/channels/list/*/*"]
 
-internal let eosMagicSheetsFilters: Set = ["/eos/get/ms/count",
-                                           "/eos/get/ms/*/list/*/*"]
+internal let eosMagicSheetFilters: Set = ["/get/ms/count",
+                                          "/get/ms/*/list/*/*"]
 
-internal let eosSetupsFilters: Set = ["/eos/get/setup/list/*/*"]
+internal let eosSetupFilters: Set = ["/get/setup/list/*/*"]
 
-internal let eosPlaybackFilters: Set = ["/eos/out/event/cue/*/*/fire"]
+internal let eosPlaybackFilters: Set = ["/event/cue/*/*/fire"]
