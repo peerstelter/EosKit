@@ -26,10 +26,10 @@
 import Foundation
 
 internal struct EosTargetChanges {
-    let add: Set<EosConsoleTarget>
-    let remove: Set<EosConsoleTarget>
+    let add: Set<EosRecordTarget>
+    let remove: Set<EosRecordTarget>
     
-    init(from fromTargets: Set<EosConsoleTarget>, to toTargets: Set<EosConsoleTarget>) {
+    init(from fromTargets: Set<EosRecordTarget>, to toTargets: Set<EosRecordTarget>) {
         add = toTargets.subtracting(fromTargets)
         remove = fromTargets.subtracting(toTargets)
     }

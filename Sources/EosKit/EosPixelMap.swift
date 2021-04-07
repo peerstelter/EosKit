@@ -28,28 +28,50 @@ import OSCKit
 
 struct EosPixelMap: EosTarget, Hashable {
 
-    static var stepCount: Int = 1
-    static let target: EosConsoleTarget = .macro
+    static var stepCount: Int = 2
+    static let target: EosRecordTarget = .pixelMap
     let number: Double
     let uuid: UUID
     let label: String
-    let mode: String
-    let commandText: String
+    let serverChannel: UInt32
+    let interface: String
+    let width: UInt32
+    let height: UInt32
+    let pixelCount: UInt32
+    let fixtureCount: UInt32
+    let layerChannels: Set<Double>
     
     init?(messages: [OSCMessage]) {
-        guard messages.count == Self.stepCount else { return nil }
-        guard let number = messages[0].number(),
+        guard messages.count == Self.stepCount,
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
+              let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
+              let number = indexMessage.number(),
               let double = Double(number),
-              let uuid = messages[0].uuid(),
-              let label = messages[0].arguments[2] as? String,
-              let mode = messages[0].arguments[3] as? String,
-              let commandText = messages[1].arguments[2] as? String
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String,
+              let serverChannel = indexMessage.arguments[3] as? NSNumber, let uServerChannel = UInt32(exactly: serverChannel),
+              let interface = indexMessage.arguments[4] as? String,
+              let width = indexMessage.arguments[5] as? NSNumber, let uWidth = UInt32(exactly: width),
+              let height = indexMessage.arguments[6] as? NSNumber, let uHeight = UInt32(exactly: height),
+              let pixelCount = indexMessage.arguments[7] as? NSNumber, let uPixelCount = UInt32(exactly: pixelCount),
+              let fixtureCount = indexMessage.arguments[8] as? NSNumber, let uFixtureCount = UInt32(exactly: fixtureCount)
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
-        self.mode = mode
-        self.commandText = commandText
+        self.serverChannel = uServerChannel
+        self.interface = interface
+        self.width = uWidth
+        self.height = uHeight
+        self.pixelCount = uPixelCount
+        self.fixtureCount = uFixtureCount
+        
+        var layerChannelsList: Set<Double> = []
+        for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
+            let layerChannelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            layerChannelsList = layerChannelsList.union(layerChannelsAsDoubles)
+        }
+        self.layerChannels = layerChannelsList
     }
     
 }

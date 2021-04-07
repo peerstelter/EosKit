@@ -29,7 +29,7 @@ import OSCKit
 public struct EosGroup: EosTarget, Hashable {
 
     static internal var stepCount: Int = 2
-    static internal let target: EosConsoleTarget = .group
+    static internal let target: EosRecordTarget = .group
     let number: Double
     let uuid: UUID
     let label: String

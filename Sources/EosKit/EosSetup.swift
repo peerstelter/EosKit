@@ -24,3 +24,28 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
+
+public struct EosSetup: Hashable {
+
+    var upTimeDuration: Int32       // milliseconds
+    var downTimeDuration: Int32     // milliseconds
+    var focusTimeDuration: Int32    // milliseconds
+    var colorTimeDuration: Int32    // milliseconds
+    var beamTimeDuration: Int32     // milliseconds
+    
+    init?(message: OSCMessage) {
+        guard let upTimeDuration = message.arguments[0] as? Int32,
+              let downTimeDuration = message.arguments[1] as? Int32,
+              let focusTimeDuration = message.arguments[2] as? Int32,
+              let colorTimeDuration = message.arguments[3] as? Int32,
+              let beamTimeDuration = message.arguments[4] as? Int32
+        else { return nil }
+        self.upTimeDuration = upTimeDuration
+        self.downTimeDuration = downTimeDuration
+        self.focusTimeDuration = focusTimeDuration
+        self.colorTimeDuration = colorTimeDuration
+        self.beamTimeDuration = beamTimeDuration
+    }
+
+}

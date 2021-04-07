@@ -39,6 +39,7 @@ internal let eosDiscoveryRequest = "/etc/discovery/request"
 internal let eosDiscoveryReply = "/etc/discovery/reply"
 internal let eosFiltersRemove = "/eos/filter/remove"
 internal let eosFiltersAdd = "/eos/filter/add"
+internal let eosSubscribe = "/eos/subscribe"
 internal let eosRequestPrefix = "/eos"
 internal let eosReplyPrefix = "/eos/out"
 internal let eosPingRequest = "/ping"
@@ -70,7 +71,9 @@ internal let eosCueFilters: Set = ["/get/cuelist/count",
 
 internal let eosGroupFilters: Set = ["/get/group/count",
                                       "/get/group/*/list/*/*",
-                                      "/get/group/*/channels/list/*/*"]
+                                      "/get/group/*/channels/list/*/*",
+                                      "/notify/group/list/*/*",
+                                      "/get/group/0"]
 
 internal let eosMacroFilters: Set = ["/get/macro/count",
                                       "/get/macro/*/list/*/*",

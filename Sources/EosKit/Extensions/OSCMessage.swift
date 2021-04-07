@@ -29,14 +29,6 @@ import OSCKit
 
 extension OSCMessage {
     
-    internal class var eosReset: OSCMessage { return Cache.eosReset }
-    internal class var eosVersion: OSCMessage { return Cache.eosVersion }
-    
-    private struct Cache {
-        static let eosReset = OSCMessage(with: "/eos/reset", arguments: [])
-        static let eosVersion = OSCMessage(with: "/eos/get/version", arguments: [])
-    }
-    
     internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix) }}
     
     internal func addressWithoutEosReply() -> String {
@@ -59,16 +51,24 @@ extension OSCMessage {
     }
     
     internal func number() -> String? {
-        guard self.addressParts.count > 3 else { return nil }
+        guard self.addressParts.count >= 3 else { return nil }
         return self.addressParts[2]
     }
     
-    static internal func getCount(for target: EosConsoleTarget) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/\(target.part)/count", arguments: [])
+    static internal func getCount(for target: EosRecordTarget) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/count")
     }
     
-    static internal func get(index: Int32, forTarget target: EosConsoleTarget) -> OSCMessage {
-        return OSCMessage(with: "/eos/get/\(target.part)/index/\(index)", arguments: [])
+    static internal func get(index: Int32, forTarget target: EosRecordTarget) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/index/\(index)")
+    }
+    
+    static internal func get(target: EosRecordTarget, withUUID uuid: UUID) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/uid/\(uuid)")
+    }
+    
+    static internal func get(target: EosRecordTarget, withNumber number: String) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/\(target.part)/\(number)")
     }
     
     internal static func update(_ bool: inout Bool, withArgument argument: Any) {

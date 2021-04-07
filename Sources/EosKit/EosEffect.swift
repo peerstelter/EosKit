@@ -28,23 +28,38 @@ import OSCKit
 
 public struct EosEffect: EosTarget, Hashable {
 
-    
     static var stepCount: Int = 1
-    static let target: EosConsoleTarget = .effect
+    static let target: EosRecordTarget = .effect
     let number: Double
     let uuid: UUID
     let label: String
+    let type: String
+    let entry: String
+    let exit: String
+    let duration: String
+    let scale: UInt32
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
-              let number = messages[0].number(),
+              let indexMessage = messages.first,
+              let number = indexMessage.number(),
               let double = Double(number),
-              let uuid = messages[0].uuid(),
-              let label = messages[0].arguments[2] as? String
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String,
+              let type = indexMessage.arguments[3] as? String,
+              let entry = indexMessage.arguments[4] as? String,
+              let exit = indexMessage.arguments[5] as? String,
+              let duration = indexMessage.arguments[6] as? String,
+              let scale = indexMessage.arguments[7] as? NSNumber, let uScale = UInt32(exactly: scale)
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
+        self.type = type
+        self.entry = entry
+        self.exit = exit
+        self.duration = duration
+        self.scale = uScale
     }
 
 }

@@ -1,5 +1,5 @@
 //
-//  EosConsoleTarget.swift
+//  EosRecordTarget.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,7 +26,7 @@
 
 import Foundation
 
-public enum EosConsoleTarget: Int {
+public enum EosRecordTarget: Int {
     case patch
     case cue
     case group

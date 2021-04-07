@@ -29,7 +29,7 @@ import OSCKit
 struct EosMacro: EosTarget, Hashable {
 
     static var stepCount: Int = 2
-    static let target: EosConsoleTarget = .macro
+    static let target: EosRecordTarget = .macro
     let number: Double
     let uuid: UUID
     let label: String

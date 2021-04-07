@@ -30,7 +30,7 @@ import OSCKit
 public protocol EosConsoleDelegate {
     func console(_ console: EosConsole, didUpdateState state: EosConsoleState)
     func console(_ console: EosConsole, didReceiveUndefinedMessage message: String)
-    func console(_ console: EosConsole, didCompleteSynchronisingOptions options: Set<EosConsoleTarget>)
+    func console(_ console: EosConsole, didCompleteSynchronisingOptions options: Set<EosRecordTarget>)
 }
 
 /// Represents the current state of an EosConsole.
@@ -71,12 +71,12 @@ public final class EosConsole: NSObject, Identifiable {
     /// The current optional functionality of the console.
     ///
     /// An eos family console can provide information regarding many parts of its systems, for example, cue lists, patch, presets and palettes.
-    /// To request and gain a syncronous data store to parts of the eos family console this targets should be inserted with the corresponding `EosConsoleTarget`.
-    public var targets: Set<EosConsoleTarget> = [] { didSet { consoleTargetsDidChange(from: oldValue, to: targets) }}
+    /// To request and gain a syncronous data store to parts of the eos family console targets should be inserted with the corresponding `EosRecordTarget`.
+    public var targets: Set<EosRecordTarget> = [] { didSet { consoleTargetsDidChange(from: oldValue, to: targets) }}
     
     /// The current filters applied to the console.
     ///
-    /// As `options` are changed filters are added and removed to the console to limit the OSC messages to those that are strictly necesary.
+    /// As `targets` are changed filters are added and removed to the console to limit the OSC messages to those that are strictly necesary.
     private(set) public var filters: Set<String> = []
     
     private var completionHandlers: [String : EosKitCompletionHandler] = [:]
@@ -88,6 +88,7 @@ public final class EosConsole: NSObject, Identifiable {
     
     public let name: String
     public let type: EosConsoleType
+    public var setup: EosSetup?
     private(set) var interface: String { get { client.interface ?? "" } set { client.interface = newValue } }
     private(set) var host: String { get { client.host ?? "localhost" } set { client.host = newValue } }
     private(set) var port: UInt16 { get { client.port } set { client.port = newValue } }
@@ -118,7 +119,6 @@ public final class EosConsole: NSObject, Identifiable {
     private var snapshotManager: EosTargetManager<EosSnapshot>?
     private var pixelMapManager: EosTargetManager<EosPixelMap>?
     private var magicSheetManager: EosTargetManager<EosMagicSheet>?
-//    private var setupManager: SingleStepTargetManager<EosSetup>?
     
     public init(name: String, type: EosConsoleType = .unknown, interface: String = "", host: String, port: UInt16 = 3032) {
         self.name = name
@@ -186,8 +186,9 @@ public final class EosConsole: NSObject, Identifiable {
             if message.isHeartbeat(with: strongSelf.uuid), strongSelf.state != .responsive {
                 strongSelf.state = .responsive
                 if strongSelf.systemFiltersSent == false {
-//                    strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(eosSystemFilters)))
-                    strongSelf.filters = strongSelf.filters.union(eosSystemFilters)
+                    let systemFilters = eosSystemFilters.map { eosReplyPrefix + $0 }
+                    strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: systemFilters))
+                    strongSelf.filters = strongSelf.filters.union(systemFilters)
                     strongSelf.systemFiltersSent = true
                 }
             }
@@ -218,11 +219,12 @@ public final class EosConsole: NSObject, Identifiable {
     
     // MARK:- Console Options
     
-    private func consoleTargetsDidChange(from fromTargets: Set<EosConsoleTarget>, to toTargets: Set<EosConsoleTarget>) {
+    private func consoleTargetsDidChange(from fromTargets: Set<EosRecordTarget>, to toTargets: Set<EosRecordTarget>) {
         guard state == .responsive else { return }
         let targetChanges = EosTargetChanges(from: fromTargets, to: toTargets)
-//        filter(with: optionChanges)
+        filter(with: targetChanges)
         synchronise(with: targetChanges)
+        sendMessage(with: eosSubscribe, arguments: [1])
     }
     
     // MARK:- Filter
@@ -236,16 +238,11 @@ public final class EosConsole: NSObject, Identifiable {
         case (false, false):
             filters = filters.union(filterChanges.add)
             filters = filters.subtracting(filterChanges.remove)
-            // TODO: Check whether Eos can handle OSC Bundles...
-            // Eos consoles can receive OSCBundles and EosKit sends them to reduce the amount of message sent on the network.
-            // The elements within the OSCBundles are actioned upon synscronously by Eos consoles and reply will be as individual OSCMessages.
             client.send(packet: OSCBundle(with: [OSCMessage(with: eosFiltersAdd,
                                                             arguments: Array(filterChanges.add)),
                                                  OSCMessage(with: eosFiltersRemove,
                                                             arguments: Array(filterChanges.remove))
             ]))
-//            client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
-//            client.send(packet: OSCMessage(with: eosFiltersRemove, arguments: Array(filterChanges.remove)))
         case (false, true):
             filters = filters.union(filterChanges.add)
             client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: Array(filterChanges.add)))
@@ -262,7 +259,7 @@ public final class EosConsole: NSObject, Identifiable {
         removeManagers(with: changes.remove)
     }
     
-    private func addManagers(with targets: Set<EosConsoleTarget>) {
+    private func addManagers(with targets: Set<EosRecordTarget>) {
         progress.totalUnitCount = Int64(targets.count)
         targets.forEach({
             switch $0 {
@@ -342,16 +339,12 @@ public final class EosConsole: NSObject, Identifiable {
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
                 magicSheetManager?.synchronise()
             case .setup:
-                return
-//                let managerProgress = Progress(totalUnitCount: 1)
-//                setupManager = SingleStepTargetManager(console: self, progress: managerProgress)
-//                progress.addChild(managerProgress, withPendingUnitCount: 1)
-//                setupManager?.synchronise()
+                sendMessage(with: "/eos/get/setup", arguments: [])
             }
         })
     }
     
-    private func removeManagers(with targets: Set<EosConsoleTarget>) {
+    private func removeManagers(with targets: Set<EosRecordTarget>) {
         targets.forEach({
             switch $0 {
             case .patch: patchManager = nil
@@ -369,7 +362,8 @@ public final class EosConsole: NSObject, Identifiable {
             case .snapshot: snapshotManager = nil
             case .pixelMap: pixelMapManager = nil
             case .magicSheet: magicSheetManager = nil
-            case .setup: return            }
+            case .setup: return
+            }
         })
     }
     
@@ -412,22 +406,22 @@ extension EosConsole: OSCPacketDestination {
                 restartHeartbeatTimer()
             }
             switch message.addressPattern {
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.patch.part)"):patchManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.cue.part)"): cueManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.group.part)"): groupManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.macro.part)"): macroManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.sub.part)"): subManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.preset.part)"): presetManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.intensityPalette.part)"): intensityPaletteManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.focusPalette.part)"): focusPaletteManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.colorPalette.part)"): colorPaletteManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.beamPalette.part)"): beamPaletteManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.curve.part)"): curveManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.effect.part)"): effectManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.snapshot.part)"): snapshotManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.pixelMap.part)"): pixelMapManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.magicSheet.part)"): magicSheetManager?.take(message: message)
-            case _ where message.addressPattern.hasPrefix("/get/\(EosConsoleTarget.setup.part)"): return
+            case _ where isGetOrNotify(message: message, for: .patch):patchManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .cue): cueManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .group): groupManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .macro): macroManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .sub): subManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .preset): presetManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .intensityPalette): intensityPaletteManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .focusPalette): focusPaletteManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .colorPalette): colorPaletteManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .beamPalette): beamPaletteManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .curve): curveManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .effect): effectManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .snapshot): snapshotManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .pixelMap): pixelMapManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .magicSheet): magicSheetManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .setup): setup = EosSetup(message: message)
             default:
                 guard let completionHandler = completionHandlers[relativeAddress] else {
 //                    delegate?.console(self, didReceiveUndefinedMessage: OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
@@ -440,7 +434,14 @@ extension EosConsole: OSCPacketDestination {
             delegate?.console(self, didReceiveUndefinedMessage: OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         }
     }
+    
+    private func isGetOrNotify(message: OSCMessage, for target: EosRecordTarget) -> Bool {
+        return message.addressPattern.hasPrefix("/get/\(target.part)") || message.addressPattern.hasPrefix("/notify/\(target.part)")
+    }
+    
 }
+
+
 
 // MARK:- OSCClientDelegate
 extension EosConsole: OSCClientDelegate {

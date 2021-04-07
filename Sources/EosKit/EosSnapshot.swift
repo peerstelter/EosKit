@@ -29,16 +29,18 @@ import OSCKit
 public struct EosSnapshot: EosTarget, Hashable {
     
     static var stepCount: Int = 1
-    static let target: EosConsoleTarget = .snapshot
+    static let target: EosRecordTarget = .snapshot
     let number: Double
     let uuid: UUID
     let label: String
     
     init?(messages: [OSCMessage]) {
-        guard let number = messages[0].number(),
+        guard messages.count == Self.stepCount,
+              let indexMessage = messages.first,
+              let number = indexMessage.number(),
               let double = Double(number),
-              let uuid = messages[0].uuid(),
-              let label = messages[0].arguments[2] as? String
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String
         else { return nil }
         self.number = double
         self.uuid = uuid
