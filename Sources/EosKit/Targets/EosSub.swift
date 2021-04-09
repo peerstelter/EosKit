@@ -43,7 +43,7 @@ struct EosSub: EosTarget, Hashable {
 //    let upTime: Int32       // milliseconds
 //    let dwellTime: Int32    // milliseconds
 //    let downTime: Int32     // milliseconds
-    let effects: Set<Double>
+    let effects: [Double]
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
@@ -77,12 +77,12 @@ struct EosSub: EosTarget, Hashable {
 //        self.upTime = upTime
 //        self.dwellTime = dwellTime
 //        self.downTime = downTime
-        var effectsList: Set<Double> = []
+        var effectsList: [Double] = []
         for argument in fxMessage.arguments[2...] where fxMessage.arguments.count >= 3 {
             let effectsAsDoubles = EosOSCNumber.doubles(from: argument)
-            effectsList = effectsList.union(effectsAsDoubles)
+            effectsList += effectsAsDoubles
         }
-        self.effects = effectsList
+        self.effects = effectsList.sorted()
     }
     
 }

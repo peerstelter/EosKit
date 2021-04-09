@@ -30,6 +30,6 @@ import OSCKit
 struct EosChannel: Hashable {
 
     let number: UInt32
-    let parts: Set<EosChannelPart>
+    let parts: [EosChannelPart]
     
 }

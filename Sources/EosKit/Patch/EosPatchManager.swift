@@ -90,7 +90,7 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
            targetMessages.parts.allSatisfy({ $0.count == EosChannelPart.stepCount }),
            let uNumber = UInt32(number)
         {
-            database.insert(EosChannel(number: uNumber, parts: Set(targetMessages.parts.compactMap { EosChannelPart(messages: $0) })))
+            database.insert(EosChannel(number: uNumber, parts: targetMessages.parts.compactMap { EosChannelPart(messages: $0) }.sorted(by: { $0.number < $1.number }) ))
             channelMessages[number] = nil
         }
     }

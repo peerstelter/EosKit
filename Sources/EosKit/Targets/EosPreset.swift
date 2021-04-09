@@ -35,9 +35,9 @@ public struct EosPreset: EosTarget, Hashable {
     let label: String
     let absolute: Bool
     let locked: Bool
-    let channels: Set<Double>
-    let byTypeChannels: Set<Double>
-    let effects: Set<Double>
+    let channels: [Double]
+    let byTypeChannels: [Double]
+    let effects: [Double]
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
@@ -60,26 +60,26 @@ public struct EosPreset: EosTarget, Hashable {
         self.absolute = absolute == .oscTrue
         self.locked = locked == .oscTrue
         
-        var channelsList: Set<Double> = []
+        var channelsList: [Double] = []
         for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
             let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
-            channelsList = channelsList.union(channelsAsDoubles)
+            channelsList += channelsAsDoubles
         }
-        self.channels = channelsList
+        self.channels = channelsList.sorted()
         
-        var byTypeChannelsList: Set<Double> = []
+        var byTypeChannelsList: [Double] = []
         for argument in byTypeMessage.arguments[2...] where byTypeMessage.arguments.count >= 3 {
             let byTypeChannelsAsDoubles = EosOSCNumber.doubles(from: argument)
-            byTypeChannelsList = byTypeChannelsList.union(byTypeChannelsAsDoubles)
+            byTypeChannelsList += byTypeChannelsAsDoubles
         }
-        self.byTypeChannels = byTypeChannelsList
+        self.byTypeChannels = byTypeChannelsList.sorted()
         
-        var effectsList: Set<Double> = []
+        var effectsList: [Double] = []
         for argument in fxMessage.arguments[2...] where fxMessage.arguments.count >= 3 {
             let effectsAsDoubles = EosOSCNumber.doubles(from: argument)
-            effectsList = effectsList.union(effectsAsDoubles)
+            effectsList += effectsAsDoubles
         }
-        self.effects = effectsList
+        self.effects = effectsList.sorted()
     }
 
 }

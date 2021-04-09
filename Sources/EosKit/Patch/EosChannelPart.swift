@@ -29,7 +29,7 @@ import OSCKit
 
 struct EosChannelPart: Hashable {
     
-    static var stepCount: Int = 2
+    internal static var stepCount: Int = 2
     let channelNumber: UInt32
     let number: UInt32
     let uuid: UUID                  // Should never change

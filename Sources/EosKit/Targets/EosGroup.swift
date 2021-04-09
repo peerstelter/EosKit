@@ -33,7 +33,7 @@ public struct EosGroup: EosTarget, Hashable {
     let number: Double
     let uuid: UUID
     let label: String
-    let channels: Set<Double>
+    let channels: [Double]
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
@@ -47,10 +47,10 @@ public struct EosGroup: EosTarget, Hashable {
         self.number = double
         self.uuid = uuid
         self.label = label
-        var channelsList: Set<Double> = []
+        var channelsList: [Double] = []
         for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
             let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
-            channelsList = channelsList.union(channelsAsDoubles)
+            channelsList += channelsAsDoubles
         }
         self.channels = channelsList
     }

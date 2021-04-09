@@ -13,7 +13,7 @@ The EosKit package provides the classes needed for your apps to communicate with
 #### Xcode 11+
 [Add the package dependency](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app) to your Xcode project using the following repository URL: 
 ``` 
-https://github.com/SammyTheHand/EosKit
+https://github.com/SammySmallman/EosKit
 ```
 #### Swift Package Manager
 
@@ -21,6 +21,6 @@ Add the package dependency to your Package.swift and depend on "EosKit" in the n
 
 ```  swift
 dependencies: [
-    .package(url: "https://github.com/SammyTheHand/EosKit", .branch("master"))
+    .package(url: "https://github.com/SammySmallman/EosKit", .branch("master"))
 ]
 ```
