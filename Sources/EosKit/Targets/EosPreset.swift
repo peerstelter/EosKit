@@ -1,5 +1,5 @@
 //
-//  EosSub.swift
+//  EosPreset.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,57 +26,54 @@
 import Foundation
 import OSCKit
 
-struct EosSub: EosTarget, Hashable {
-
-    static var stepCount: Int = 2
-    static let target: EosRecordTarget = .sub
+public struct EosPreset: EosTarget, Hashable {
+    
+    static internal let stepCount: Int = 4
+    static internal let target: EosRecordTarget = .preset
     let number: Double
     let uuid: UUID
     let label: String
-    let mode: String
-    let faderMode: String
-    let htp: Bool
-    let exclusive: Bool
-    let background: Bool
-    let restore: Bool
-//    let priority: String
-//    let upTime: Int32       // milliseconds
-//    let dwellTime: Int32    // milliseconds
-//    let downTime: Int32     // milliseconds
+    let absolute: Bool
+    let locked: Bool
+    let channels: Set<Double>
+    let byTypeChannels: Set<Double>
     let effects: Set<Double>
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
-              let indexMessage = messages.first(where: { $0.addressPattern.contains("fx") == false }),
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false &&
+                                                         $0.addressPattern.contains("byType") == false &&
+                                                         $0.addressPattern.contains("fx") == false }),
+              let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
+              let byTypeMessage = messages.first(where: { $0.addressPattern.contains("byType") == true }),
               let fxMessage = messages.first(where: { $0.addressPattern.contains("fx") == true }),
-              let number = indexMessage.number(), number == fxMessage.number(),
+              let number = indexMessage.number(), number == channelsMessage.number(), number == byTypeMessage.number(), number == fxMessage.number(),
               let double = Double(number),
               let uuid = indexMessage.uuid(),
               let label = indexMessage.arguments[2] as? String,
-              let mode = indexMessage.arguments[3] as? String,
-              let faderMode = indexMessage.arguments[4] as? String,
-              let htp = indexMessage.arguments[5] as? OSCArgument,
-              let exclusive = indexMessage.arguments[6] as? OSCArgument,
-              let background = indexMessage.arguments[7] as? OSCArgument,
-              let restore = indexMessage.arguments[8] as? OSCArgument
-//              let priority = indexMessage.arguments[9] as? String,
-//              let upTime = indexMessage.arguments[10] as? Int32,
-//              let dwellTime = indexMessage.arguments[11] as? Int32,
-//              let downTime = indexMessage.arguments[12] as? Int32
+              let absolute = indexMessage.arguments[3] as? OSCArgument,
+              let locked = indexMessage.arguments[4] as? OSCArgument
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
-        self.mode = mode
-        self.faderMode = faderMode
-        self.htp = htp == .oscTrue
-        self.exclusive = exclusive == .oscTrue
-        self.background = background  == .oscTrue
-        self.restore = restore == .oscTrue
-//        self.priority = priority
-//        self.upTime = upTime
-//        self.dwellTime = dwellTime
-//        self.downTime = downTime
+        self.absolute = absolute == .oscTrue
+        self.locked = locked == .oscTrue
+        
+        var channelsList: Set<Double> = []
+        for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
+            let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            channelsList = channelsList.union(channelsAsDoubles)
+        }
+        self.channels = channelsList
+        
+        var byTypeChannelsList: Set<Double> = []
+        for argument in byTypeMessage.arguments[2...] where byTypeMessage.arguments.count >= 3 {
+            let byTypeChannelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            byTypeChannelsList = byTypeChannelsList.union(byTypeChannelsAsDoubles)
+        }
+        self.byTypeChannels = byTypeChannelsList
+        
         var effectsList: Set<Double> = []
         for argument in fxMessage.arguments[2...] where fxMessage.arguments.count >= 3 {
             let effectsAsDoubles = EosOSCNumber.doubles(from: argument)
@@ -84,5 +81,5 @@ struct EosSub: EosTarget, Hashable {
         }
         self.effects = effectsList
     }
-    
+
 }

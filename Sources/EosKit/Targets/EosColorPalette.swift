@@ -1,5 +1,5 @@
 //
-//  EosIntensityPalette.swift
+//  EosColorPalette.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,10 +26,10 @@
 import Foundation
 import OSCKit
 
-public struct EosIntensityPalette: EosTarget, Hashable {
+public struct EosColorPalette: EosTarget, Hashable {
     
-    static var stepCount: Int = 3
-    static let target: EosRecordTarget = .intensityPalette
+    static internal let stepCount: Int = 3
+    static internal let target: EosRecordTarget = .colorPalette
     let number: Double
     let uuid: UUID
     let label: String

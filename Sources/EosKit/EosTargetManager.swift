@@ -62,25 +62,26 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
         progress = Progress(totalUnitCount: Int64(count))
         managerProgress?.addChild(progress!, withPendingUnitCount: 1)
         for index in 0..<count {
-            console.send(OSCMessage.get(index: index, forTarget: T.target))
+            console.send(OSCMessage.get(target: T.target, withIndex: index))
         }
     }
     
     private func index(message: OSCMessage) {
         guard let number = message.number() else { return }
         if number == "0" {
-            // The EosConsole has been notified of a change to a target and details have been requested using the uuid
-            // for a target that does not exist anymore.
+            // The EosConsole has been notified of a change to a target and details have
+            // been requested using the uuid for a target that does not exist anymore.
             if let uuid = message.uuid(), let target = database.first(where: { $0.uuid == uuid }) {
                 database.remove(target)
                 messages[uuid] = nil
             }
         } else if message.arguments.isEmpty {
-            // The EosConsole has been notified of a change to a target and details have been requested using the
-            // target number. The likelihood of receiving this message is very low as all requests for detailed information
-            // use either the index number provided by the count method, or the uuid directly associated with the target in the database.
-            // The only time you would see this called would be when a target has been deleted and detailed information has been requested using
-            // the old target number... which we don't do.
+            // The EosConsole has been notified of a change to a target and details have been requested using the number
+            // for a target that does not exist anymore. The likelihood of receiving this message is very low as all
+            // requests for detailed information use either the index number provided by the count method, or the
+            // uuid directly associated with the target in the database. The only time you would see this called
+            // would be when a target has been deleted and detailed information has been requested using the
+            // old target number... which we don't do.
             if let doubleNumber = Double(number), let target = database.first(where: { $0.number == doubleNumber }) {
                 database.remove(target)
                 messages[target.uuid] = nil
@@ -122,7 +123,7 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
     }
     
     func synchronise() {
-        console.send(OSCMessage.getCount(for: T.target))
+        console.send(OSCMessage.getCount(of: T.target))
     }
     
 }

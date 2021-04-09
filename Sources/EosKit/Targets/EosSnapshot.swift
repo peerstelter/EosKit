@@ -1,5 +1,5 @@
 //
-//  EosPatchDatabase.swift
+//  EosSnapshot.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -24,26 +24,27 @@
 //  THE SOFTWARE.
 
 import Foundation
+import OSCKit
 
-internal class EosPatchDatabase {
+public struct EosSnapshot: EosTarget, Hashable {
     
-    private (set) public var channels: Set<EosChannel> = []
+    static internal let stepCount: Int = 1
+    static internal let target: EosRecordTarget = .snapshot
+    let number: Double
+    let uuid: UUID
+    let label: String
     
-    internal func add(channel: EosChannel) {
-        channels.insert(channel)
+    init?(messages: [OSCMessage]) {
+        guard messages.count == Self.stepCount,
+              let indexMessage = messages.first,
+              let number = indexMessage.number(),
+              let double = Double(number),
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String
+        else { return nil }
+        self.number = double
+        self.uuid = uuid
+        self.label = label
     }
-    
-    internal func remove(channel: EosChannel) {
-        channels.remove(channel)
-    }
-    
-    internal func channel(with number: UInt32) -> EosChannel? {
-        return channels.first(where: { $0.number == number })
-    }
-    
-    internal func patch(with uuid: UUID, inChannelWithNumber channelNumber: UInt32) -> EosChannelPart? {
-        guard let channel = channel(with: channelNumber) else { return nil }
-        return channel.parts.first(where: { $0.uuid == uuid })
-    }
-    
+
 }

@@ -1,5 +1,5 @@
 //
-//  EosCurve.swift
+//  EosEffect.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,13 +26,18 @@
 import Foundation
 import OSCKit
 
-public struct EosCurve: EosTarget, Hashable {
-    
-    static var stepCount: Int = 1
-    static let target: EosRecordTarget = .curve
+public struct EosEffect: EosTarget, Hashable {
+
+    static internal let stepCount: Int = 1
+    static internal let target: EosRecordTarget = .effect
     let number: Double
     let uuid: UUID
     let label: String
+    let type: String
+    let entry: String
+    let exit: String
+    let duration: String
+    let scale: UInt32
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
@@ -40,11 +45,21 @@ public struct EosCurve: EosTarget, Hashable {
               let number = indexMessage.number(),
               let double = Double(number),
               let uuid = indexMessage.uuid(),
-              let label = indexMessage.arguments[2] as? String
+              let label = indexMessage.arguments[2] as? String,
+              let type = indexMessage.arguments[3] as? String,
+              let entry = indexMessage.arguments[4] as? String,
+              let exit = indexMessage.arguments[5] as? String,
+              let duration = indexMessage.arguments[6] as? String,
+              let scale = indexMessage.arguments[7] as? NSNumber, let uScale = UInt32(exactly: scale)
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
+        self.type = type
+        self.entry = entry
+        self.exit = exit
+        self.duration = duration
+        self.scale = uScale
     }
-    
+
 }

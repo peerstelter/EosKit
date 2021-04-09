@@ -30,27 +30,79 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
     
     private let console: EosConsole
     internal let addressSpace = OSCAddressSpace()
-    private let database: EosPatchDatabase
-    private let handler: EosPatchMessageHandler
+    private var database = Set<EosChannel>()
+    
+    private var managerProgress: Progress?
+    private var progress: Progress?
+    private var channelMessages: [String:(count: UInt32, parts: [[OSCMessage]])] = [:]
     
     init(console: EosConsole, progress: Progress? = nil) {
         self.console = console
-        self.database = EosPatchDatabase()
-        self.handler = EosPatchMessageHandler(console: console, database: self.database, progress: progress)
+        self.managerProgress = progress
         registerAddressSpace()
     }
     
     private func registerAddressSpace() {
-        let patchCountMethod = OSCAddressMethod(with: "/get/patch/count", andCompletionHandler: handler.patchCount(message:))
-        addressSpace.methods.insert(patchCountMethod)
-        let patchMethod = OSCAddressMethod(with: "/get/patch/*/*/list/*/*", andCompletionHandler: handler.patch(message:))
-        addressSpace.methods.insert(patchMethod)
-        let patchNotesMethod = OSCAddressMethod(with: "/get/patch/*/*/notes", andCompletionHandler: handler.patchNotes(message:))
-        addressSpace.methods.insert(patchNotesMethod)
+        EosRecordTarget.patch.filters.forEach {
+            if $0.hasSuffix("count") {
+                addressSpace.methods.insert(OSCAddressMethod(with: $0, andCompletionHandler: count(message:)))
+            } else if $0.hasPrefix("/notify") {
+                addressSpace.methods.insert(OSCAddressMethod(with: $0, andCompletionHandler: notify(message:)))
+            } else {
+                addressSpace.methods.insert(OSCAddressMethod(with: $0, andCompletionHandler: index(message:)))
+            }
+        }
+    }
+    
+    internal func count(message: OSCMessage) -> () {
+        guard let count = message.arguments[0] as? Int32 else { return }
+        progress = Progress(totalUnitCount: Int64(count))
+        managerProgress?.addChild(progress!, withPendingUnitCount: 1)
+        for index in 0..<count {
+            console.send(OSCMessage.get(target: .patch, withIndex: index))
+        }
+    }
+    
+    internal func index(message: OSCMessage) {
+        guard let number = message.number(), let subNumber = message.subNumber() else { return }
+        if let targetMessage = channelMessages[number], targetMessage.parts.first?.first?.number() == number {
+            if let partIndex = targetMessage.parts.firstIndex(where: { $0.contains { $0.subNumber() == subNumber } }) {
+                // This will be a notes message
+                channelMessages[number]?.parts[partIndex].append(message)
+            } else {
+                channelMessages[number]?.parts.append([message])
+                // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
+                // Do we need to query whether we are currently synchronising?
+                progress?.completedUnitCount += 1
+            }
+        } else {
+            // This gets called once per channel when receiving the first part.
+            guard message.addressPattern.hasSuffix("notes") == false,
+                  let partCount = message.arguments[19] as? NSNumber,
+                  let uPartCount = UInt32(exactly: partCount) else { return }
+            channelMessages[number] = (count: uPartCount, parts: [[message]])
+            // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
+            // Do we need to query whether we are currently synchronising?
+            progress?.completedUnitCount += 1
+        }
+        if let targetMessages = channelMessages[number],
+           targetMessages.count == targetMessages.parts.count,
+           targetMessages.parts.allSatisfy({ $0.count == EosChannelPart.stepCount }),
+           let uNumber = UInt32(number)
+        {
+            database.insert(EosChannel(number: uNumber, parts: Set(targetMessages.parts.compactMap { EosChannelPart(messages: $0) })))
+            channelMessages[number] = nil
+        }
+    }
+    
+    private func notify(message: OSCMessage) {
+        synchronise()
     }
     
     func synchronise() {
-        console.send(OSCMessage.eosGetPatchCount())
+        channelMessages.removeAll()
+        database.removeAll()
+        console.send(OSCMessage.getCount(of: .patch))
     }
 
 }

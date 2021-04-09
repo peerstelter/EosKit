@@ -55,11 +55,16 @@ extension OSCMessage {
         return self.addressParts[2]
     }
     
-    static internal func getCount(for target: EosRecordTarget) -> OSCMessage {
+    internal func subNumber() -> String? {
+        guard self.addressParts.count >= 4 else { return nil }
+        return self.addressParts[3]
+    }
+    
+    static internal func getCount(of target: EosRecordTarget) -> OSCMessage {
         return OSCMessage(with: "/eos/get/\(target.part)/count")
     }
     
-    static internal func get(index: Int32, forTarget target: EosRecordTarget) -> OSCMessage {
+    static internal func get(target: EosRecordTarget, withIndex index: Int32) -> OSCMessage {
         return OSCMessage(with: "/eos/get/\(target.part)/index/\(index)")
     }
     

@@ -1,5 +1,5 @@
 //
-//  EosPreset.swift
+//  EosGroup.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,60 +26,34 @@
 import Foundation
 import OSCKit
 
-public struct EosPreset: EosTarget, Hashable {
-    
-    static var stepCount: Int = 4
-    static let target: EosRecordTarget = .preset
+public struct EosGroup: EosTarget, Hashable {
+
+    static internal let stepCount: Int = 2
+    static internal let target: EosRecordTarget = .group
     let number: Double
     let uuid: UUID
     let label: String
-    let absolute: Bool
-    let locked: Bool
     let channels: Set<Double>
-    let byTypeChannels: Set<Double>
-    let effects: Set<Double>
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
-              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false &&
-                                                         $0.addressPattern.contains("byType") == false &&
-                                                         $0.addressPattern.contains("fx") == false }),
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
               let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
-              let byTypeMessage = messages.first(where: { $0.addressPattern.contains("byType") == true }),
-              let fxMessage = messages.first(where: { $0.addressPattern.contains("fx") == true }),
-              let number = indexMessage.number(), number == channelsMessage.number(), number == byTypeMessage.number(), number == fxMessage.number(),
+              let number = indexMessage.number(), number == channelsMessage.number(),
               let double = Double(number),
               let uuid = indexMessage.uuid(),
-              let label = indexMessage.arguments[2] as? String,
-              let absolute = indexMessage.arguments[3] as? OSCArgument,
-              let locked = indexMessage.arguments[4] as? OSCArgument
+              let label = indexMessage.arguments[2] as? String
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
-        self.absolute = absolute == .oscTrue
-        self.locked = locked == .oscTrue
-        
         var channelsList: Set<Double> = []
         for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
             let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
             channelsList = channelsList.union(channelsAsDoubles)
         }
         self.channels = channelsList
-        
-        var byTypeChannelsList: Set<Double> = []
-        for argument in byTypeMessage.arguments[2...] where byTypeMessage.arguments.count >= 3 {
-            let byTypeChannelsAsDoubles = EosOSCNumber.doubles(from: argument)
-            byTypeChannelsList = byTypeChannelsList.union(byTypeChannelsAsDoubles)
-        }
-        self.byTypeChannels = byTypeChannelsList
-        
-        var effectsList: Set<Double> = []
-        for argument in fxMessage.arguments[2...] where fxMessage.arguments.count >= 3 {
-            let effectsAsDoubles = EosOSCNumber.doubles(from: argument)
-            effectsList = effectsList.union(effectsAsDoubles)
-        }
-        self.effects = effectsList
     }
-
+    
 }
+

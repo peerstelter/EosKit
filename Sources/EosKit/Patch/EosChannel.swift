@@ -27,36 +27,9 @@
 import Foundation
 import OSCKit
 
-class EosChannel: Hashable {
+struct EosChannel: Hashable {
+
+    let number: UInt32
+    let parts: Set<EosChannelPart>
     
-    static func == (lhs: EosChannel, rhs: EosChannel) -> Bool {
-        return lhs.number == rhs.number
-    }
-    
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(number)
-    }
-    
-    var number: UInt32
-    var parts: Set<EosChannelPart> = []
-    
-    init(number: UInt32) {
-        self.number = number
-    }
-    
-    internal static func channel(from message: OSCMessage) -> EosChannel? {
-        guard let number = EosChannel.number(from: message), let uNumber = UInt32(number) else { return nil }
-        return EosChannel(number: uNumber)
-    }
-    
-    internal static func number(from message: OSCMessage) -> String? {
-        guard message.addressParts.count > 3 else { return nil }
-        return message.addressParts[2]
-    }
-    
-    internal func updateNumber(with message: OSCMessage) {
-        if let number = EosChannel.number(from: message), let uNumber = UInt32(number), self.number != uNumber {
-            self.number = uNumber
-        }
-    }
 }

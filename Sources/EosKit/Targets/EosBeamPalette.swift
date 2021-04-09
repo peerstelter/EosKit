@@ -1,5 +1,5 @@
 //
-//  EosGroup.swift
+//  EosBeamPalette.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,34 +26,51 @@
 import Foundation
 import OSCKit
 
-public struct EosGroup: EosTarget, Hashable {
-
-    static internal var stepCount: Int = 2
-    static internal let target: EosRecordTarget = .group
+public struct EosBeamPalette: EosTarget, Hashable {
+    
+    static internal let stepCount: Int = 3
+    static internal let target: EosRecordTarget = .beamPalette
     let number: Double
     let uuid: UUID
     let label: String
+    let absolute: Bool
+    let locked: Bool
     let channels: Set<Double>
+    let byTypeChannels: Set<Double>
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
-              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false &&
+                                                         $0.addressPattern.contains("byType") == false }),
               let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
-              let number = indexMessage.number(), number == channelsMessage.number(),
+              let byTypeMessage = messages.first(where: { $0.addressPattern.contains("byType") == true }),
+              let number = indexMessage.number(), number == channelsMessage.number(), number == byTypeMessage.number(),
               let double = Double(number),
               let uuid = indexMessage.uuid(),
-              let label = indexMessage.arguments[2] as? String
+              let label = indexMessage.arguments[2] as? String,
+              let absolute = indexMessage.arguments[3] as? OSCArgument,
+              let locked = indexMessage.arguments[4] as? OSCArgument
         else { return nil }
         self.number = double
         self.uuid = uuid
         self.label = label
+        self.absolute = absolute == .oscTrue
+        self.locked = locked == .oscTrue
+        
         var channelsList: Set<Double> = []
         for argument in channelsMessage.arguments[2...] where channelsMessage.arguments.count >= 3 {
             let channelsAsDoubles = EosOSCNumber.doubles(from: argument)
             channelsList = channelsList.union(channelsAsDoubles)
         }
         self.channels = channelsList
+        
+        var byTypeChannelsList: Set<Double> = []
+        for argument in byTypeMessage.arguments[2...] where byTypeMessage.arguments.count >= 3 {
+            let byTypeChannelsAsDoubles = EosOSCNumber.doubles(from: argument)
+            byTypeChannelsList = byTypeChannelsList.union(byTypeChannelsAsDoubles)
+        }
+        self.byTypeChannels = byTypeChannelsList
     }
-    
+
 }
 

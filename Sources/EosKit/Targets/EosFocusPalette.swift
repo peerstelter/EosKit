@@ -28,8 +28,8 @@ import OSCKit
 
 public struct EosFocusPalette: EosTarget, Hashable {
     
-    static var stepCount: Int = 3
-    static let target: EosRecordTarget = .focusPalette
+    static internal let stepCount: Int = 3
+    static internal let target: EosRecordTarget = .focusPalette
     let number: Double
     let uuid: UUID
     let label: String

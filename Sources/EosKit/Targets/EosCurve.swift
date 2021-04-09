@@ -1,5 +1,5 @@
 //
-//  EosMagicSheet.swift
+//  EosCurve.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -26,10 +26,10 @@
 import Foundation
 import OSCKit
 
-public struct EosMagicSheet: EosTarget, Hashable {
+public struct EosCurve: EosTarget, Hashable {
     
-    static var stepCount: Int = 1
-    static let target: EosRecordTarget = .magicSheet
+    static internal let stepCount: Int = 1
+    static internal let target: EosRecordTarget = .curve
     let number: Double
     let uuid: UUID
     let label: String
@@ -46,5 +46,5 @@ public struct EosMagicSheet: EosTarget, Hashable {
         self.uuid = uuid
         self.label = label
     }
-
+    
 }
