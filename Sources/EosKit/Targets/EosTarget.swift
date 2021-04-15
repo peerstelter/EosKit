@@ -33,6 +33,8 @@ internal protocol EosTarget: Hashable {
     
     var uuid: UUID { get }  // Should never change.
     var number: Double { get }
+    
+    /// EosTargets expect to receive the correct amount and formatted messages in their initialisation method.
     init?(messages: [OSCMessage])
     
 }

@@ -28,6 +28,7 @@ import Foundation
 
 public enum EosRecordTarget: Int {
     case patch
+    case cueList
     case cue
     case group
     case macro
@@ -47,7 +48,8 @@ public enum EosRecordTarget: Int {
     var filters: Set<String> {
         switch self {
         case .patch: return eosPatchFilters
-        case .cue: return eosCueFilters
+        case .cueList: return eosCueListFilters
+        case .cue: return eosCueNoPartsFilters
         case .group: return eosGroupFilters
         case .macro: return eosMacroFilters
         case .sub: return eosSubFilters
@@ -68,6 +70,7 @@ public enum EosRecordTarget: Int {
     var part: String {
         switch self {
         case .patch: return "patch"
+        case .cueList: return "cuelist"
         case .cue: return "cue"
         case .group: return "group"
         case .macro: return "macro"

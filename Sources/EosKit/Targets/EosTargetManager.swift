@@ -28,7 +28,7 @@ import OSCKit
 
 internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
     
-    public var database = Set<T>()
+    public var database: [T] = []
     private let console: EosConsole
     internal let addressSpace = OSCAddressSpace()
     
@@ -54,7 +54,7 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
         }
     }
     
-    private func count(message: OSCMessage) -> () {
+    private func count(message: OSCMessage) {
         guard let count = message.arguments[0] as? Int32, count > 0 else {
             managerProgress?.completedUnitCount = 1
             return
@@ -71,9 +71,9 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
         if number == "0" {
             // The EosConsole has been notified of a change to a target and details have
             // been requested using the uuid for a target that does not exist anymore.
-            if let uuid = message.uuid(), let target = database.first(where: { $0.uuid == uuid }) {
-                database.remove(target)
+            if let uuid = message.uuid(), let firstIndex = database.firstIndex(where: { $0.uuid == uuid }) {
                 messages[uuid] = nil
+                database.remove(at: firstIndex)
             }
         } else if message.arguments.isEmpty {
             // The EosConsole has been notified of a change to a target and details have been requested using the number
@@ -82,9 +82,9 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
             // uuid directly associated with the target in the database. The only time you would see this called
             // would be when a target has been deleted and detailed information has been requested using the
             // old target number... which we don't do.
-            if let doubleNumber = Double(number), let target = database.first(where: { $0.number == doubleNumber }) {
-                database.remove(target)
-                messages[target.uuid] = nil
+            if let dNumber = Double(number), let firstIndex = database.firstIndex(where: { $0.number == dNumber }) {
+                messages[database[firstIndex].uuid] = nil
+                database.remove(at: firstIndex)
             }
         } else {
             guard let uuid = message.uuid() else { return }
@@ -95,10 +95,11 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
             }
             if let targetMessages = messages[uuid], targetMessages.count == T.stepCount {
                 if let target = T(messages: targetMessages) {
-                    if let index = database.firstIndex(where: { $0.uuid == target.uuid }) {
-                        database.remove(at: index)
+                    if let firstIndex = database.firstIndex(where: { $0.uuid == target.uuid }) {
+                        database.remove(at: firstIndex)
                     }
-                    database.insert(target)
+                    let index = database.insertionIndex { $0.number < target.number }
+                    database.insert(target, at: index)
                     // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
                     // Do we need to query whether we are currently synchronising?
                     progress?.completedUnitCount += 1

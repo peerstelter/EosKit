@@ -24,49 +24,49 @@
 //  THE SOFTWARE.
 
 import Foundation
-
-internal class EosCueDatabase {
-    
-    private (set) public var lists: Set<EosCueList> = []
-    
-    internal func add(list: EosCueList) {
-        lists.insert(list)
-    }
-    
-    internal func remove(list: EosCueList) {
-        lists.remove(list)
-    }
-    
-    internal func list(with uuid: UUID) -> EosCueList? {
-        return lists.first(where: { $0.uuid == uuid })
-    }
-    
-    internal func list(with number: UInt32) -> EosCueList? {
-        return lists.first(where: { $0.number == number })
-    }
-    
-    internal func cue(with uuid: UUID, inListWithNumber listNumber: UInt32) -> EosCue? {
-        guard let list = list(with: listNumber) else { return nil }
-        return list.cues.first(where: { $0.uuid == uuid })
-    }
-    
-    internal func add(cue: EosCue, toListWithNumber listNumber: UInt32) -> Bool {
-        guard let list = list(with: listNumber) else { return false }
-        list.cues.insert(cue)
-        return true
-    }
-    
-    internal func part(with uuid: UUID, inCueWithNumber cueNumber: Double, inListWithNumber listNumber: UInt32) -> EosCuePart? {
-        guard let list = list(with: listNumber) else { return nil }
-        guard let cue = list.cues.first(where: { $0.number == cueNumber }) else { return nil }
-        return cue.parts.first(where: { $0.uuid == uuid })
-    }
-    
-    internal func add(part: EosCuePart, toCueWithNumber cueNumber: Double, inListWithNumber listNumber: UInt32) -> Bool {
-        guard let list = list(with: listNumber) else { return false }
-        guard let cue = list.cues.first(where: { $0.number == cueNumber }) else { return false }
-        cue.parts.insert(part)
-        return true
-    }
-
-}
+//
+//internal class EosCueDatabase {
+//    
+//    private (set) public var lists: Set<EosCueList> = []
+//    
+//    internal func add(list: EosCueList) {
+//        lists.insert(list)
+//    }
+//    
+//    internal func remove(list: EosCueList) {
+//        lists.remove(list)
+//    }
+//    
+//    internal func list(with uuid: UUID) -> EosCueList? {
+//        return lists.first(where: { $0.uuid == uuid })
+//    }
+//    
+//    internal func list(with number: UInt32) -> EosCueList? {
+//        return lists.first(where: { $0.number == number })
+//    }
+//    
+//    internal func cue(with uuid: UUID, inListWithNumber listNumber: UInt32) -> EosCue? {
+//        guard let list = list(with: listNumber) else { return nil }
+//        return list.cues.first(where: { $0.uuid == uuid })
+//    }
+//    
+//    internal func add(cue: EosCue, toListWithNumber listNumber: UInt32) -> Bool {
+//        guard let list = list(with: listNumber) else { return false }
+//        list.cues.insert(cue)
+//        return true
+//    }
+//    
+//    internal func part(with uuid: UUID, inCueWithNumber cueNumber: Double, inListWithNumber listNumber: UInt32) -> EosCuePart? {
+//        guard let list = list(with: listNumber) else { return nil }
+//        guard let cue = list.cues.first(where: { $0.number == cueNumber }) else { return nil }
+//        return cue.parts.first(where: { $0.uuid == uuid })
+//    }
+//    
+//    internal func add(part: EosCuePart, toCueWithNumber cueNumber: Double, inListWithNumber listNumber: UInt32) -> Bool {
+//        guard let list = list(with: listNumber) else { return false }
+//        guard let cue = list.cues.first(where: { $0.number == cueNumber }) else { return false }
+//        cue.parts.insert(part)
+//        return true
+//    }
+//
+//}

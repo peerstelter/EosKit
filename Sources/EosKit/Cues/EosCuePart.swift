@@ -27,37 +27,154 @@
 import Foundation
 import OSCKit
 
-class EosCuePart: EosCueBase {
+struct EosCuePart: Hashable {
+
+    static internal let stepCount: Int = 4
+    let listNumber: Double          // This is only a Double to conform to EosTarget, in reality it's a UInt32.
+    let cueNumber: Double
+    let number: UInt32
+    let uuid: UUID
+    let label: String
+    let upTimeDuration: Int32       // milliseconds
+    let upTimeDelay: Int32          // milliseconds
+    let downTimeDuration: Int32     // milliseconds
+    let downTimeDelay: Int32        // milliseconds
+    let focusTimeDuration: Int32    // milliseconds
+    let focusTimeDelay: Int32       // milliseconds
+    let colorTimeDuration: Int32    // milliseconds
+    let colorTimeDelay: Int32       // milliseconds
+    let beamTimeDuration: Int32     // milliseconds
+    let beamTimeDelay: Int32        // milliseconds
+    let preheat: Bool               // TODO: Preheat levels?
+    let curve: Double?              // OSC Number
+    let rate: UInt32
+    let mark: String                // "m", "M" or ""
+    let block: String               // "b", "B" or ""
+    let assert: String              // "a", "A" or ""
+    let link: String                // OSC Number or String - String if links to a separate cue list.
+    let followTime: Int32           // milliseconds
+    let hangTime: Int32             // milliseconds
+    let allFade: Bool
+    let loop: Int32
+    let solo: Bool
+    let timecode: String
+    let cueNotes: String
+    let sceneText: String
+    let sceneEnd: Bool
+    let effects: [Double]
+    let links: [Double]
+    let actions: String
     
-    var listNumber: UInt32
-    var cueNumber: Double
-    var number: UInt32
-    
-    var description: String { get { return "Cue \(listNumber)/\(cueNumber)/\(number)\(!label.isEmpty ? " (\(label))" : "")" } }
-    
-    internal init(listNumber: UInt32, cueNumber: Double, number: UInt32, uuid: UUID, label: String, upTimeDuration: Int32, upTimeDelay: Int32, downTimeDuration: Int32, downTimeDelay: Int32, focusTimeDuration: Int32, focusTimeDelay: Int32, colorTimeDuration: Int32, colorTimeDelay: Int32, beamTimeDuration: Int32, beamTimeDelay: Int32, preheat: Bool, curve: Double, rate: UInt32, mark: String, block: String, assert: String, link: String, followTime: Int32, hangTime: Int32, allFade: Bool, loop: Int32, solo: Bool, timecode: String, cueNotes: String, sceneText: String, sceneEnd: Bool) {
-        self.listNumber = listNumber
-        self.cueNumber = cueNumber
+    init?(messages: [OSCMessage]) {
+        guard messages.count == Self.stepCount,
+              let indexMessage = messages.first(where: { $0.addressPattern.contains("fx") == false &&
+                                                         $0.addressPattern.contains("links") == false &&
+                                                         $0.addressPattern.contains("actions") == false }),
+              let fxMessage = messages.first(where: { $0.addressPattern.contains("fx") == true }),
+              let linksMessage = messages.first(where: { $0.addressPattern.contains("links") == true }),
+              let actionsMessage = messages.first(where: { $0.addressPattern.contains("actions") == true }),
+              let listNumber = indexMessage.number(), let dListNumber = Double(listNumber),
+              let cueNumber = indexMessage.subNumber(), let dCueNumber = Double(cueNumber),
+              let number = UInt32(indexMessage.addressParts[4]),
+              let uuid = indexMessage.uuid(),
+              let label = indexMessage.arguments[2] as? String,
+              let upTimeDuration = indexMessage.arguments[3] as? Int32,
+              let upTimeDelay = indexMessage.arguments[4] as? Int32,
+              let downTimeDuration = indexMessage.arguments[5] as? Int32,
+              let downTimeDelay = indexMessage.arguments[6] as? Int32,
+              let focusTimeDuration = indexMessage.arguments[7] as? Int32,
+              let focusTimeDelay = indexMessage.arguments[8] as? Int32,
+              let colorTimeDuration = indexMessage.arguments[9] as? Int32,
+              let colorTimeDelay = indexMessage.arguments[10] as? Int32,
+              let beamTimeDuration = indexMessage.arguments[11] as? Int32,
+              let beamTimeDelay = indexMessage.arguments[12] as? Int32,
+              let preheat = indexMessage.arguments[13] as? OSCArgument,
+              let curve = EosOSCNumber.doubles(from:  indexMessage.arguments[14]).first,
+              let rate = indexMessage.arguments[15] as? NSNumber, let uRate = UInt32(exactly: rate),
+              let mark = indexMessage.arguments[16] as? String,
+              let block = indexMessage.arguments[17] as? String,
+              let assert = indexMessage.arguments[18] as? String,
+              let link = EosCue.link(from: indexMessage.arguments[19]),
+              let followTime = indexMessage.arguments[20] as? Int32,
+              let hangTime = indexMessage.arguments[21] as? Int32,
+              let allFade = indexMessage.arguments[22] as? OSCArgument,
+              let loop = indexMessage.arguments[23] as? Int32,
+              let solo = indexMessage.arguments[24] as? OSCArgument,
+              let timecode = indexMessage.arguments[25] as? String,
+              let cueNotes = indexMessage.arguments[27] as? String,
+              let sceneText = indexMessage.arguments[28] as? String,
+              let sceneEnd = indexMessage.arguments[29] as? OSCArgument
+        else { return nil }
+        self.listNumber = dListNumber
+        self.cueNumber = dCueNumber
         self.number = number
-        super.init(uuid: uuid, label: label, upTimeDuration: upTimeDuration, upTimeDelay: upTimeDelay, downTimeDuration: downTimeDuration, downTimeDelay: downTimeDelay, focusTimeDuration: focusTimeDuration, focusTimeDelay: focusTimeDelay, colorTimeDuration: colorTimeDuration, colorTimeDelay: colorTimeDelay, beamTimeDuration: beamTimeDuration, beamTimeDelay: beamTimeDelay, preheat: preheat, curve: curve, rate: rate, mark: mark, block: block, assert: assert, link: link, followTime: followTime, hangTime: hangTime, allFade: allFade, loop: loop, solo: solo, timecode: timecode, cueNotes: cueNotes, sceneText: sceneText, sceneEnd: sceneEnd)
+        self.uuid = uuid
+        self.label = label
+        self.upTimeDuration = upTimeDuration
+        self.upTimeDelay = upTimeDelay
+        self.downTimeDuration = downTimeDuration
+        self.downTimeDelay = downTimeDelay
+        self.focusTimeDuration = focusTimeDuration
+        self.focusTimeDelay = focusTimeDelay
+        self.colorTimeDuration = colorTimeDuration
+        self.colorTimeDelay = colorTimeDelay
+        self.beamTimeDuration = beamTimeDuration
+        self.beamTimeDelay = beamTimeDelay
+        self.preheat = preheat == .oscTrue
+        self.curve = curve
+        self.rate = uRate
+        self.mark = mark
+        self.block = block
+        self.assert = assert
+        self.link = link
+        self.followTime = followTime
+        self.hangTime = hangTime
+        self.allFade = allFade == .oscTrue
+        self.loop = loop
+        self.solo = solo == .oscTrue
+        self.timecode = timecode
+        self.cueNotes = cueNotes
+        self.sceneText = sceneText
+        self.sceneEnd = sceneEnd == .oscTrue
+        
+        var effectsList: [Double] = []
+        for argument in fxMessage.arguments[2...] {
+            let effects = EosOSCNumber.doubles(from: argument)
+            effectsList += effects
+        }
+        self.effects = effectsList
+        
+        var linkedCueLists: [Double] = []
+        for argument in linksMessage.arguments[2...] {
+            let lists = EosOSCNumber.doubles(from: argument)
+            linkedCueLists += lists
+        }
+        self.links = linkedCueLists
+        
+        if actionsMessage.arguments.count == 3, let actions = actionsMessage.arguments[2] as? String {
+            self.actions = actions
+        } else {
+            self.actions = ""
+        }
+        
     }
     
-    internal static func number(from message: OSCMessage) -> String? {
-        guard message.addressParts.count > 5 else { return nil }
-        return message.addressParts[4]
+    internal static func link(from any: Any) -> String? {
+        if let int = any as? Int32 {
+            return int == 0 ? "" : String(int)
+        }
+        if let string = any as? String {
+            return string
+        }
+        return nil
     }
     
-    internal func updateNumbers(with message: OSCMessage) {
-        if let listNumber = EosCueList.number(from: message), let uListNumber = UInt32(listNumber), self.listNumber != uListNumber {
-            self.listNumber = uListNumber
-        }
-        if let number = EosCue.number(from: message), let dNumber = Double(number), self.cueNumber != dNumber {
-            self.cueNumber = dNumber
-        }
-        if let number = EosCuePart.number(from: message), let uNumber = UInt32(number), self.number != uNumber {
-            self.number = uNumber
-        }
-    }
 }
 
-
+extension EosCuePart: CustomStringConvertible {
+    
+    var description: String {
+        "Cue \(cueNumber) Part \(number)\(label.isEmpty == true ? "" : " - \(label)")"
+    }
+    
+}

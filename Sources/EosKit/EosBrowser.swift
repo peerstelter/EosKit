@@ -30,7 +30,7 @@ import NetUtils
 
 public protocol EosBrowserDelegate {
     func browser(_ browser: EosBrowser, didFindConsole console: EosConsole)
-    func browser(_ browser: EosBrowser, didLooseConsole console: EosConsole)
+    func browser(_ browser: EosBrowser, didLoseConsole console: EosConsole)
 }
 
 public final class EosBrowser {
@@ -177,7 +177,7 @@ public final class EosBrowser {
         foundConsoles.remove(at: index)
         consoles[interface] = foundConsoles
         print("\(name) Lost Console: \(interface) : \(console.host)")
-        delegate?.browser(self, didLooseConsole: console)
+        delegate?.browser(self, didLoseConsole: console)
     }
         
 }
@@ -222,7 +222,7 @@ extension EosBrowser: OSCPacketDestination {
     }
     
     public func take(bundle: OSCBundle) {
-        // An eos family console doesn't send any OSC Bundles. It DOES? receive them though!
+        // An eos family console doesn't send any OSC Bundles.
         return
     }
     

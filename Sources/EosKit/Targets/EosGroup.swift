@@ -26,6 +26,13 @@
 import Foundation
 import OSCKit
 
+
+/// An Eos Group
+///
+/// Groups do not receive notification changes when an Eos console has changed the patch.
+/// Whilst groups are considered a collection of channels, the two are *very* loosely coupled.
+/// You should consider a group as a shortcut to place a collection of channels in a specific
+/// order onto the command line.
 public struct EosGroup: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
@@ -39,8 +46,7 @@ public struct EosGroup: EosTarget, Hashable {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
               let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),
-              let number = indexMessage.number(), number == channelsMessage.number(),
-              let double = Double(number),
+              let number = indexMessage.number(), let double = Double(number),
               let uuid = indexMessage.uuid(),
               let label = indexMessage.arguments[2] as? String
         else { return nil }

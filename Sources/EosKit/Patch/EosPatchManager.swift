@@ -34,7 +34,12 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
     
     private var managerProgress: Progress?
     private var progress: Progress?
-    private var channelMessages: [String:(count: UInt32, parts: [[OSCMessage]])] = [:]
+    /// A dictionary of `OSCMessage`'s to build an EosChannel with its component `EosChannelPart`'s.
+    ///
+    /// - The key of the dictionary is the EosChannel number.
+    /// - `count` is the number of parts the channel has.
+    /// - `parts` holds the current cached arrays of part messages.
+    private var messages: [String:(count: UInt32, parts: [[OSCMessage]])] = [:]
     
     init(console: EosConsole, progress: Progress? = nil) {
         self.console = console
@@ -65,13 +70,13 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
     
     internal func index(message: OSCMessage) {
         guard let number = message.number(), let subNumber = message.subNumber() else { return }
-        if let targetMessage = channelMessages[number], targetMessage.parts.first?.first?.number() == number {
+        if let targetMessage = messages[number], targetMessage.parts.first?.first?.number() == number {
             if let partIndex = targetMessage.parts.firstIndex(where: { $0.contains { $0.subNumber() == subNumber } }) {
                 // This will be a notes message
-                channelMessages[number]?.parts[partIndex].append(message)
+                messages[number]?.parts[partIndex].append(message)
             } else {
-                channelMessages[number]?.parts.append([message])
-                // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
+                messages[number]?.parts.append([message])
+                // TODO: This function gets called via a notify message which isnt part of the synchronise proceedure...
                 // Do we need to query whether we are currently synchronising?
                 progress?.completedUnitCount += 1
             }
@@ -80,18 +85,18 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
             guard message.addressPattern.hasSuffix("notes") == false,
                   let partCount = message.arguments[19] as? NSNumber,
                   let uPartCount = UInt32(exactly: partCount) else { return }
-            channelMessages[number] = (count: uPartCount, parts: [[message]])
+            messages[number] = (count: uPartCount, parts: [[message]])
             // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
             // Do we need to query whether we are currently synchronising?
             progress?.completedUnitCount += 1
         }
-        if let targetMessages = channelMessages[number],
+        if let targetMessages = messages[number],
            targetMessages.count == targetMessages.parts.count,
            targetMessages.parts.allSatisfy({ $0.count == EosChannelPart.stepCount }),
            let uNumber = UInt32(number)
         {
             database.insert(EosChannel(number: uNumber, parts: targetMessages.parts.compactMap { EosChannelPart(messages: $0) }.sorted(by: { $0.number < $1.number }) ))
-            channelMessages[number] = nil
+            messages[number] = nil
         }
     }
     
@@ -100,7 +105,7 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
     }
     
     func synchronise() {
-        channelMessages.removeAll()
+        messages.removeAll()
         database.removeAll()
         console.send(OSCMessage.getCount(of: .patch))
     }

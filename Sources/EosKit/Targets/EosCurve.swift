@@ -37,8 +37,7 @@ public struct EosCurve: EosTarget, Hashable {
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first,
-              let number = indexMessage.number(),
-              let double = Double(number),
+              let number = indexMessage.number(), let double = Double(number),
               let uuid = indexMessage.uuid(),
               let label = indexMessage.arguments[2] as? String
         else { return nil }

@@ -32,7 +32,7 @@ struct EosChannelPart: Hashable {
     internal static var stepCount: Int = 2
     let channelNumber: UInt32
     let number: UInt32
-    let uuid: UUID                  // Should never change
+    let uuid: UUID
     let label: String
     let fixtureManufacturer: String
     let fixtureModel: String
@@ -57,10 +57,8 @@ struct EosChannelPart: Hashable {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.hasSuffix("notes") == false }),
               let notesMessage = messages.first(where: { $0.addressPattern.hasSuffix("notes") == true }),
-              let channelNumber = indexMessage.number(), channelNumber == notesMessage.number(),
-              let partNumber = indexMessage.subNumber(), partNumber == notesMessage.subNumber(),
-              let uChannelNumber = UInt32(channelNumber),
-              let uPartNumber = UInt32(partNumber),
+              let channelNumber = indexMessage.number(), let uChannelNumber = UInt32(channelNumber),
+              let partNumber = indexMessage.subNumber(), let uPartNumber = UInt32(partNumber),
               let uuid = indexMessage.uuid(),
               let label = indexMessage.arguments[2] as? String,
               let fixtureManufacturer = indexMessage.arguments[3] as? String,

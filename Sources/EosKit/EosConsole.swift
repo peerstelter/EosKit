@@ -105,6 +105,7 @@ public final class EosConsole: NSObject, Identifiable {
     public var progressHandler: ((Double, String, String) -> Void)?
     
     private var patchManager: EosPatchManager?
+    private var cueListManager: EosTargetManager<EosCueList>?
     private var cueManager: EosCueManager?
     private var groupManager: EosTargetManager<EosGroup>?
     private var macroManager: EosTargetManager<EosMacro>?
@@ -268,6 +269,11 @@ public final class EosConsole: NSObject, Identifiable {
                 patchManager = EosPatchManager(console: self, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
                 patchManager?.synchronise()
+            case .cueList:
+                let managerProgress = Progress(totalUnitCount: 1)
+                cueListManager = EosTargetManager(console: self, progress: managerProgress)
+                progress.addChild(managerProgress, withPendingUnitCount: 1)
+                cueListManager?.synchronise()
             case .cue:
                 let managerProgress = Progress(totalUnitCount: 1)
                 cueManager = EosCueManager(console: self, progress: managerProgress)
@@ -348,6 +354,7 @@ public final class EosConsole: NSObject, Identifiable {
         targets.forEach({
             switch $0 {
             case .patch: patchManager = nil
+            case .cueList: cueListManager = nil
             case .cue: cueManager = nil
             case .group: groupManager = nil
             case .macro: macroManager = nil
@@ -407,7 +414,10 @@ extension EosConsole: OSCPacketDestination {
             }
             switch message.addressPattern {
             case _ where isGetOrNotify(message: message, for: .patch):patchManager?.take(message: message)
-            case _ where isGetOrNotify(message: message, for: .cue): cueManager?.take(message: message)
+            case _ where isGetOrNotify(message: message, for: .cue):
+                cueManager?.take(message: message)
+                fallthrough
+            case _ where isGetOrNotify(message: message, for: .cueList): cueListManager?.take(message: message)
             case _ where isGetOrNotify(message: message, for: .group): groupManager?.take(message: message)
             case _ where isGetOrNotify(message: message, for: .macro): macroManager?.take(message: message)
             case _ where isGetOrNotify(message: message, for: .sub): subManager?.take(message: message)

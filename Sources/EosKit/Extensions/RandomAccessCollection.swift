@@ -1,8 +1,8 @@
 //
-//  MockEosConsoleDelegate.swift
+//  RandomAccessCollection.swift
 //  EosKit
 //
-//  Created by Sam Smallman on 16/05/2020.
+//  Created by Sam Smallman on 12/05/2020.
 //  Copyright © 2020 Sam Smallman. https://github.com/SammySmallman
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,42 +25,19 @@
 //
 
 import Foundation
-import XCTest
-import OSCKit
-@testable import EosKit
 
-internal final class MockEosConsoleDelegate: EosConsoleDelegate {
+extension RandomAccessCollection {
+    func insertionIndex(for predicate: (Element) -> Bool) -> Index {
+        var slice : SubSequence = self[...]
 
-    internal typealias handler = (EosConsole) -> Void
-    
-    internal var consoleDidConnectCallback: handler? = nil
-    internal var consoleDidDisconnectCallback: handler? = nil
-    internal var consoleDidUpdateStatetCallback: handler? = nil
-    internal var consoleDidReceiveUndefinedMessageCallback: handler? = nil
-    
-    func consoleDidConnect(_ console: EosConsole) {
-        if let callback = consoleDidConnectCallback {
-            callback(console)
+        while !slice.isEmpty {
+            let middle = slice.index(slice.startIndex, offsetBy: slice.count / 2)
+            if predicate(slice[middle]) {
+                slice = slice[index(after: middle)...]
+            } else {
+                slice = slice[..<middle]
+            }
         }
+        return slice.startIndex
     }
-    
-    func consoleDidDisconnect(_ console: EosConsole) {
-        if let callback = consoleDidConnectCallback {
-            callback(console)
-        }
-    }
-    
-    func console(_ console: EosConsole, didUpdateState state: EosConsoleState) {
-        if let callback = consoleDidUpdateStatetCallback {
-            callback(console)
-        }
-    }
-    
-    func console(_ console: EosConsole, didReceiveUndefinedMessage message: String) {
-        if let callback = consoleDidReceiveUndefinedMessageCallback {
-            callback(console)
-        }
-    }
-
-    
 }
