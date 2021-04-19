@@ -1,5 +1,5 @@
 //
-//  EosCurve.swift
+//  Publisher.swift
 //  EosKit
 //
 //  Created by Sam Smallman on 12/05/2020.
@@ -22,28 +22,24 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
-
+//
 import Foundation
-import OSCKit
+import Combine
 
-public struct EosCurve: EosTarget, Hashable {
-    
-    static internal let stepCount: Int = 1
-    static internal let target: EosRecordTarget = .curve
-    public let number: Double
-    public let uuid: UUID
-    public let label: String
-    
-    internal init?(messages: [OSCMessage]) {
-        guard messages.count == Self.stepCount,
-              let indexMessage = messages.first,
-              let number = indexMessage.number(), let double = Double(number),
-              let uuid = indexMessage.uuid(),
-              let label = indexMessage.arguments[2] as? String
-        else { return nil }
-        self.number = double
-        self.uuid = uuid
-        self.label = label
-    }
-    
-}
+//extension Publisher where Output == [Double: [EosCue]], Failure == Never {
+//    
+//    func toCueList(cueList: Double) -> AnyPublisher<URLSession.DataTaskPublisher.Output, URLError> {
+//        if #available(iOS 14, *) {
+//            return self.flatMap({ path -> URLSession.DataTaskPublisher in
+//                let url = baseURL.appendingPathComponent(path)
+//                return URLSession.shared.dataTaskPublisher(for: url)
+//            ).eraseToAnyPublisher()
+//            } else {
+//                return self.setFailureType(to: URLError.self).flatMap({ path -> URLSession.DataTaskPublisher in
+//                    let url = baseURL.appendingPathComponent(path)
+//                    return URLSession.shared.dataTaskPublisher(for: url)
+//                }).eraseToAnyPublisher()
+//            }
+//        }
+//    }
+//}

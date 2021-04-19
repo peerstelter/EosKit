@@ -37,12 +37,12 @@ public struct EosGroup: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
     static internal let target: EosRecordTarget = .group
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let channels: [Double]
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let channels: [Double]
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
               let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),

@@ -30,16 +30,16 @@ public struct EosEffect: EosTarget, Hashable {
 
     static internal let stepCount: Int = 1
     static internal let target: EosRecordTarget = .effect
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let type: String
-    let entry: String
-    let exit: String
-    let duration: String
-    let scale: UInt32
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let type: String
+    public let entry: String
+    public let exit: String
+    public let duration: String
+    public let scale: UInt32
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first,
               let number = indexMessage.number(), let double = Double(number),

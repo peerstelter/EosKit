@@ -28,13 +28,21 @@ import OSCKit
 
 public struct EosSetup: Hashable {
 
-    var upTimeDuration: Int32       // milliseconds
-    var downTimeDuration: Int32     // milliseconds
-    var focusTimeDuration: Int32    // milliseconds
-    var colorTimeDuration: Int32    // milliseconds
-    var beamTimeDuration: Int32     // milliseconds
+    public let upTimeDuration: Int32       // milliseconds
+    public let downTimeDuration: Int32     // milliseconds
+    public let focusTimeDuration: Int32    // milliseconds
+    public let colorTimeDuration: Int32    // milliseconds
+    public let beamTimeDuration: Int32     // milliseconds
     
-    init?(message: OSCMessage) {
+    internal init(upTimeDuration: Int32, downTimeDuration: Int32, focusTimeDuration: Int32, colorTimeDuration: Int32, beamTimeDuration: Int32) {
+        self.upTimeDuration = upTimeDuration
+        self.downTimeDuration = downTimeDuration
+        self.focusTimeDuration = focusTimeDuration
+        self.colorTimeDuration = colorTimeDuration
+        self.beamTimeDuration = beamTimeDuration
+    }
+    
+    internal init?(message: OSCMessage) {
         guard let upTimeDuration = message.arguments[0] as? Int32,
               let downTimeDuration = message.arguments[1] as? Int32,
               let focusTimeDuration = message.arguments[2] as? Int32,
@@ -46,6 +54,10 @@ public struct EosSetup: Hashable {
         self.focusTimeDuration = focusTimeDuration
         self.colorTimeDuration = colorTimeDuration
         self.beamTimeDuration = beamTimeDuration
+    }
+    
+    internal static var `default`: EosSetup {
+        EosSetup(upTimeDuration: 3, downTimeDuration: 5, focusTimeDuration: 3, colorTimeDuration: 3, beamTimeDuration: 3)
     }
 
 }

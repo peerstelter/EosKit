@@ -27,9 +27,9 @@
 import Foundation
 import OSCKit
 
-struct EosChannel: Hashable {
+public struct EosChannel: Hashable {
 
-    let number: UInt32
-    let parts: [EosChannelPart]
+    public let number: UInt32
+    public let parts: [EosChannelPart]
     
 }

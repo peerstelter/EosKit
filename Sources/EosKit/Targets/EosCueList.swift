@@ -31,27 +31,27 @@ public struct EosCueList: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
     static internal let target: EosRecordTarget = .cueList
-    let number: Double // This is only a Double to conform to EosTarget, in reality it's a UInt32.
-    let uuid: UUID
-    let label: String
-    let playbackMode: String
-    let faderMode: String
-    let independent: Bool
-    let htp: Bool
-    let assert: Bool
-    let block: Bool
-    let background: Bool
-    let soloMode: Bool
-    let timecodeList: UInt32?
-    let oosSync: Bool
-    let links: [Double]
-    let cues: [EosCue]?
+    public let number: Double // This is only a Double to conform to EosTarget, in reality it's a UInt32.
+    public let uuid: UUID
+    public let label: String
+    public let playbackMode: String
+    public let faderMode: String
+    public let independent: Bool
+    public let htp: Bool
+    public let assert: Bool
+    public let block: Bool
+    public let background: Bool
+    public let soloMode: Bool
+    public let timecodeList: UInt32?
+    public let oosSync: Bool
+    public let links: [Double]
+    public let cues: [EosCue]?
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         self.init(messages: messages, cues: nil)
     }
     
-    init?(messages: [OSCMessage], cues: [EosCue]? = nil) {
+    internal init?(messages: [OSCMessage], cues: [EosCue]? = nil) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("links") == false }),
               let linksMessage = messages.first(where: { $0.addressPattern.contains("links") == true }),

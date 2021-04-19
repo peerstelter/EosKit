@@ -26,26 +26,26 @@
 import Foundation
 import OSCKit
 
-struct EosSub: EosTarget, Hashable {
+public struct EosSub: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
     static internal let target: EosRecordTarget = .sub
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let mode: String
-    let faderMode: String
-    let htp: Bool
-    let exclusive: Bool
-    let background: Bool
-    let restore: Bool
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let mode: String
+    public let faderMode: String
+    public let htp: Bool
+    public let exclusive: Bool
+    public let background: Bool
+    public let restore: Bool
 //    let priority: String
 //    let upTime: Int32       // milliseconds
 //    let dwellTime: Int32    // milliseconds
 //    let downTime: Int32     // milliseconds
-    let effects: [Double]
+    public let effects: [Double]
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("fx") == false }),
               let fxMessage = messages.first(where: { $0.addressPattern.contains("fx") == true }),

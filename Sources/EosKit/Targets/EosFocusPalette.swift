@@ -30,15 +30,15 @@ public struct EosFocusPalette: EosTarget, Hashable {
     
     static internal let stepCount: Int = 3
     static internal let target: EosRecordTarget = .focusPalette
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let absolute: Bool
-    let locked: Bool
-    let channels: [Double]
-    let byTypeChannels: [Double]
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let absolute: Bool
+    public let locked: Bool
+    public let channels: [Double]
+    public let byTypeChannels: [Double]
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false &&
                                                          $0.addressPattern.contains("byType") == false }),

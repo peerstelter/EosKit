@@ -27,7 +27,7 @@
 import Foundation
 import OSCKit
 
-struct EosCue: EosTarget, Hashable {
+public struct EosCue: EosTarget, Hashable {
     
     static internal let stepCount: Int = 4
     static internal let target: EosRecordTarget = .cue
@@ -180,7 +180,7 @@ struct EosCue: EosTarget, Hashable {
 
 extension EosCue: CustomStringConvertible {
     
-    var description: String {
+    public var description: String {
         "Cue \(number)\(label.isEmpty == true ? "" : " - \(label)")"
     }
     

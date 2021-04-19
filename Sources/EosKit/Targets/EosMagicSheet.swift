@@ -30,11 +30,11 @@ public struct EosMagicSheet: EosTarget, Hashable {
     
     static internal let stepCount: Int = 1
     static internal let target: EosRecordTarget = .magicSheet
-    let number: Double
-    let uuid: UUID
-    let label: String
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first,
               let number = indexMessage.number(), let double = Double(number),

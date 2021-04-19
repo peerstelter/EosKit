@@ -27,31 +27,31 @@
 import Foundation
 import OSCKit
 
-struct EosChannelPart: Hashable {
+public struct EosChannelPart: Hashable {
     
     internal static var stepCount: Int = 2
-    let channelNumber: UInt32
-    let number: UInt32
-    let uuid: UUID
-    let label: String
-    let fixtureManufacturer: String
-    let fixtureModel: String
-    let address: UInt32
-    let intensityAddress: UInt32
-    let currentLevel: Int32
-    let gel: String
-    let text1: String
-    let text2: String
-    let text3: String
-    let text4: String
-    let text5: String
-    let text6: String
-    let text7: String
-    let text8: String
-    let text9: String
-    let text10: String
-    let endAddress: UInt32
-    let notes: String
+    public let channelNumber: UInt32
+    public let number: UInt32
+    public let uuid: UUID
+    public let label: String
+    public let fixtureManufacturer: String
+    public let fixtureModel: String
+    public let address: UInt32
+    public let intensityAddress: UInt32
+    public let currentLevel: Int32
+    public let gel: String
+    public let text1: String
+    public let text2: String
+    public let text3: String
+    public let text4: String
+    public let text5: String
+    public let text6: String
+    public let text7: String
+    public let text8: String
+    public let text9: String
+    public let text10: String
+    public let endAddress: UInt32
+    public let notes: String
     
     init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,

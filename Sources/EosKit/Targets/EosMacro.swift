@@ -26,17 +26,17 @@
 import Foundation
 import OSCKit
 
-struct EosMacro: EosTarget, Hashable {
+public struct EosMacro: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
     static internal let target: EosRecordTarget = .macro
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let mode: String
-    let commandText: String
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let mode: String
+    public let commandText: String
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("text") == false }),
               let textMessage = messages.first(where: { $0.addressPattern.contains("text") == true }),

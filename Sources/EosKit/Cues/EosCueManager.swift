@@ -177,7 +177,7 @@ internal final class EosCueManager: EosTargetManagerProtocol {
     
     internal func notify(message: OSCMessage) {
         guard let number = message.number(),
-              let listNumber = Double(number),
+              let listNumber = Double(number)
         else { return }
         var cueNumbers: Set<Double> = []
         for argument in message.arguments[1...] where message.arguments.count >= 2 {

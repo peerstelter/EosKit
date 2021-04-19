@@ -26,22 +26,22 @@
 import Foundation
 import OSCKit
 
-struct EosPixelMap: EosTarget, Hashable {
+public struct EosPixelMap: EosTarget, Hashable {
 
     static internal let stepCount: Int = 2
     static internal let target: EosRecordTarget = .pixelMap
-    let number: Double
-    let uuid: UUID
-    let label: String
-    let serverChannel: UInt32
-    let interface: String
-    let width: UInt32
-    let height: UInt32
-    let pixelCount: UInt32
-    let fixtureCount: UInt32
-    let layerChannels: Set<Double>
+    public let number: Double
+    public let uuid: UUID
+    public let label: String
+    public let serverChannel: UInt32
+    public let interface: String
+    public let width: UInt32
+    public let height: UInt32
+    public let pixelCount: UInt32
+    public let fixtureCount: UInt32
+    public let layerChannels: Set<Double>
     
-    init?(messages: [OSCMessage]) {
+    internal init?(messages: [OSCMessage]) {
         guard messages.count == Self.stepCount,
               let indexMessage = messages.first(where: { $0.addressPattern.contains("channels") == false }),
               let channelsMessage = messages.first(where: { $0.addressPattern.contains("channels") == true }),

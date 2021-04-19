@@ -27,7 +27,7 @@
 import Foundation
 import OSCKit
 
-struct EosCuePart: Hashable {
+public struct EosCuePart: Hashable {
 
     static internal let stepCount: Int = 4
     let listNumber: Double          // This is only a Double to conform to EosTarget, in reality it's a UInt32.
@@ -173,7 +173,7 @@ struct EosCuePart: Hashable {
 
 extension EosCuePart: CustomStringConvertible {
     
-    var description: String {
+    public var description: String {
         "Cue \(cueNumber) Part \(number)\(label.isEmpty == true ? "" : " - \(label)")"
     }
     

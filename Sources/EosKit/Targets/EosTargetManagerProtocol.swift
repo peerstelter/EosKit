@@ -25,6 +25,7 @@
 
 import Foundation
 import OSCKit
+import Combine
 
 internal protocol EosTargetManagerProtocol {
     
