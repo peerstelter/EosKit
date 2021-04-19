@@ -33,8 +33,8 @@ internal struct EosFilterChanges {
         var addFilters: Set<String> = []
         var removeFilters: Set<String> = []
         
-        changes.add.forEach { addFilters = addFilters.union($0.filters.map { eosReplyPrefix + $0 }) }
-        changes.remove.forEach { removeFilters = removeFilters.union($0.filters.map { eosReplyPrefix + $0 }) }
+        changes.add.forEach { addFilters = addFilters.union($0.filters.map { eosOutPrefix + $0 }) }
+        changes.remove.forEach { removeFilters = removeFilters.union($0.filters.map { eosOutPrefix + $0 }) }
         
         add = addFilters
         remove = removeFilters

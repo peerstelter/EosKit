@@ -25,13 +25,14 @@
 
 import Foundation
 import OSCKit
+import Combine
 
 internal final class EosPatchManager: EosTargetManagerProtocol {
     
     private let console: EosConsole
+    private let targets: CurrentValueSubject<[EosChannel], Never>
     internal let addressSpace = OSCAddressSpace()
-    private var database = Set<EosChannel>()
-    
+
     private var managerProgress: Progress?
     private var progress: Progress?
     /// A dictionary of `OSCMessage`'s to build an EosChannel with its component `EosChannelPart`'s.
@@ -41,8 +42,9 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
     /// - `parts` holds the current cached arrays of part messages.
     private var messages: [String:(count: UInt32, parts: [[OSCMessage]])] = [:]
     
-    init(console: EosConsole, progress: Progress? = nil) {
+    init(console: EosConsole, targets: CurrentValueSubject<[EosChannel], Never>, progress: Progress? = nil) {
         self.console = console
+        self.targets = targets
         self.managerProgress = progress
         registerAddressSpace()
     }
@@ -95,18 +97,24 @@ internal final class EosPatchManager: EosTargetManagerProtocol {
            targetMessages.parts.allSatisfy({ $0.count == EosChannelPart.stepCount }),
            let uNumber = UInt32(number)
         {
-            database.insert(EosChannel(number: uNumber, parts: targetMessages.parts.compactMap { EosChannelPart(messages: $0) }.sorted(by: { $0.number < $1.number }) ))
+            let channel = EosChannel(number: uNumber, parts: targetMessages.parts.compactMap { EosChannelPart(messages: $0) }.sorted(by: { $0.number < $1.number }))
+            if let firstIndex = targets.value.firstIndex(where: { $0.number == channel.number }) {
+                targets.value[firstIndex] = channel
+            } else {
+                let index = targets.value.insertionIndex(for: { $0.number < channel.number })
+                targets.value.insert(channel, at: index)
+            }
             messages[number] = nil
         }
     }
     
     private func notify(message: OSCMessage) {
-        synchronise()
+        synchronize()
     }
     
-    func synchronise() {
+    func synchronize() {
         messages.removeAll()
-        database.removeAll()
+        targets.value.removeAll()
         console.send(OSCMessage.getCount(of: .patch))
     }
 

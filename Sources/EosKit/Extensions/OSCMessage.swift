@@ -29,10 +29,10 @@ import OSCKit
 
 extension OSCMessage {
     
-    internal var isEosReply: Bool { get { self.addressPattern.hasPrefix(eosReplyPrefix) }}
+    internal var isFromEos: Bool { get { self.addressPattern.hasPrefix(eosOutPrefix) }}
     
-    internal func addressWithoutEosReply() -> String {
-        let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosReplyPrefix.count)
+    internal func addressWithoutEosOut() -> String {
+        let startIndex = self.addressPattern.index(self.addressPattern.startIndex, offsetBy: eosOutPrefix.count)
         return String(self.addressPattern[startIndex...])
     }
     

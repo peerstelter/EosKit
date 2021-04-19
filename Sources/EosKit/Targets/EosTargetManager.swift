@@ -126,7 +126,7 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
         }
     }
     
-    func synchronise() {
+    func synchronize() {
         console.send(OSCMessage.getCount(of: T.target))
     }
     

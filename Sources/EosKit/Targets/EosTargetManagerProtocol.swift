@@ -30,7 +30,7 @@ import Combine
 internal protocol EosTargetManagerProtocol {
     
     var addressSpace: OSCAddressSpace { get }
-    func synchronise()
+    func synchronize()
     func take(message: OSCMessage)
 }
 

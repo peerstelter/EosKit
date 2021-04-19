@@ -41,7 +41,7 @@ internal let eosFiltersRemove = "/eos/filter/remove"
 internal let eosFiltersAdd = "/eos/filter/add"
 internal let eosSubscribe = "/eos/subscribe"
 internal let eosRequestPrefix = "/eos"
-internal let eosReplyPrefix = "/eos/out"
+internal let eosOutPrefix = "/eos/out"
 internal let eosPingRequest = "/ping"
 
 internal let eosSystemFilters: Set =            ["/get/version",
@@ -81,7 +81,7 @@ internal let eosCueNoPartsFilters: Set =        ["/get/cuelist/count",
                                                  "/get/cue/*/*/*/links/list/*/*",
                                                  "/get/cue/*/*/*/actions/list/*/*",
                                                  "/notify/cue/*/list/*/*",
-                                                 "/get/cue/*/*"]
+                                                 "/get/cue/*/*"] // You'll receive /get/cue/0/0 if you request a cue by the uuid that no longet exists.
 
 internal let eosGroupFilters: Set =             ["/get/group/count",
                                                  "/get/group/*/list/*/*",

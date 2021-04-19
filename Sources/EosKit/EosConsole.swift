@@ -123,7 +123,7 @@ public final class EosConsole: NSObject, Identifiable {
     
     internal (set) public var patch = CurrentValueSubject<[EosChannel], Never>([])
     internal (set) public var cueLists = CurrentValueSubject<[EosCueList], Never>([])
-    internal (set) public var cues = CurrentValueSubject<[[Double: [EosCue]]], Never>([])
+    internal (set) public var cues = CurrentValueSubject<[Double: [EosCue]], Never>([:])
     internal (set) public var groups = CurrentValueSubject<[EosGroup], Never>([])
     internal (set) public var macros = CurrentValueSubject<[EosMacro], Never>([])
     internal (set) public var subs = CurrentValueSubject<[EosSub], Never>([])
@@ -205,7 +205,7 @@ public final class EosConsole: NSObject, Identifiable {
             if message.isHeartbeat(with: strongSelf.uuid), strongSelf.state != .responsive {
                 strongSelf.state = .responsive
                 if strongSelf.systemFiltersSent == false {
-                    let systemFilters = eosSystemFilters.map { eosReplyPrefix + $0 }
+                    let systemFilters = eosSystemFilters.map { eosOutPrefix + $0 }
                     strongSelf.client.send(packet: OSCMessage(with: eosFiltersAdd, arguments: systemFilters))
                     strongSelf.filters = strongSelf.filters.union(systemFilters)
                     strongSelf.systemFiltersSent = true
@@ -242,7 +242,7 @@ public final class EosConsole: NSObject, Identifiable {
         guard state == .responsive else { return }
         let targetChanges = EosTargetChanges(from: fromTargets, to: toTargets)
         filter(with: targetChanges)
-        synchronise(with: targetChanges)
+        synchronize(with: targetChanges)
         sendMessage(with: eosSubscribe, arguments: [1])
     }
     
@@ -272,7 +272,7 @@ public final class EosConsole: NSObject, Identifiable {
     
     // MARK:- Synchronise
     
-    private func synchronise(with changes: EosTargetChanges) {
+    private func synchronize(with changes: EosTargetChanges) {
         addManagers(with: changes.add)
         removeManagers(with: changes.remove)
     }
@@ -283,84 +283,84 @@ public final class EosConsole: NSObject, Identifiable {
             switch $0 {
             case .patch:
                 let managerProgress = Progress(totalUnitCount: 1)
-                patchManager = EosPatchManager(console: self, progress: managerProgress)
+                patchManager = EosPatchManager(console: self, targets: patch, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                patchManager?.synchronise()
+                patchManager?.synchronize()
             case .cueList:
                 let managerProgress = Progress(totalUnitCount: 1)
                 cueListManager = EosTargetManager(console: self, targets: cueLists, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                cueListManager?.synchronise()
+                cueListManager?.synchronize()
             case .cue:
                 let managerProgress = Progress(totalUnitCount: 1)
-                cueManager = EosCueManager(console: self, progress: managerProgress)
+                cueManager = EosCueManager(console: self, targets: cues, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                cueManager?.synchronise()
+                cueManager?.synchronize()
             case .group:
                 let managerProgress = Progress(totalUnitCount: 1)
                 groupManager = EosTargetManager(console: self, targets: groups, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                groupManager?.synchronise()
+                groupManager?.synchronize()
             case .macro:
                 let managerProgress = Progress(totalUnitCount: 1)
                 macroManager = EosTargetManager(console: self, targets: macros, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                macroManager?.synchronise()
+                macroManager?.synchronize()
             case .sub:
                 let managerProgress = Progress(totalUnitCount: 1)
                 subManager = EosTargetManager(console: self, targets: subs, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                subManager?.synchronise()
+                subManager?.synchronize()
             case .preset:
                 let managerProgress = Progress(totalUnitCount: 1)
                 presetManager = EosTargetManager(console: self, targets: presets, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                presetManager?.synchronise()
+                presetManager?.synchronize()
             case .intensityPalette:
                 let managerProgress = Progress(totalUnitCount: 1)
                 intensityPaletteManager = EosTargetManager(console: self, targets: intensityPalettes, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                intensityPaletteManager?.synchronise()
+                intensityPaletteManager?.synchronize()
             case .focusPalette:
                 let managerProgress = Progress(totalUnitCount: 1)
                 focusPaletteManager = EosTargetManager(console: self, targets: focusPalettes, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                focusPaletteManager?.synchronise()
+                focusPaletteManager?.synchronize()
             case .colorPalette:
                 let managerProgress = Progress(totalUnitCount: 1)
                 colorPaletteManager = EosTargetManager(console: self, targets: colorPalettes, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                colorPaletteManager?.synchronise()
+                colorPaletteManager?.synchronize()
             case .beamPalette:
                 let managerProgress = Progress(totalUnitCount: 1)
                 beamPaletteManager = EosTargetManager(console: self, targets: beamPalettes, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                beamPaletteManager?.synchronise()
+                beamPaletteManager?.synchronize()
             case .curve:
                 let managerProgress = Progress(totalUnitCount: 1)
                 curveManager = EosTargetManager(console: self, targets: curves, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                curveManager?.synchronise()
+                curveManager?.synchronize()
             case .effect:
                 let managerProgress = Progress(totalUnitCount: 1)
                 effectManager = EosTargetManager(console: self, targets: effects, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                effectManager?.synchronise()
+                effectManager?.synchronize()
             case .snapshot:
                 let managerProgress = Progress(totalUnitCount: 1)
                 snapshotManager = EosTargetManager(console: self, targets: snapshots, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                snapshotManager?.synchronise()
+                snapshotManager?.synchronize()
             case .pixelMap:
                 let managerProgress = Progress(totalUnitCount: 1)
                 pixelMapManager = EosTargetManager(console: self, targets: pixelMaps, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                pixelMapManager?.synchronise()
+                pixelMapManager?.synchronize()
             case .magicSheet:
                 let managerProgress = Progress(totalUnitCount: 1)
                 magicSheetManager = EosTargetManager(console: self, targets: magicSheets, progress: managerProgress)
                 progress.addChild(managerProgress, withPendingUnitCount: 1)
-                magicSheetManager?.synchronise()
+                magicSheetManager?.synchronize()
             case .setup:
                 sendMessage(with: "/eos/get/setup", arguments: [])
             }
@@ -405,11 +405,11 @@ public final class EosConsole: NSObject, Identifiable {
     }
     
     // TODO: Not sure this is needed anymore...
-    internal func sendMessage(with addressPattern: String, arguments: [Any], completionHandlers: [(addressPattern: String, completionHandler: EosKitCompletionHandler)]) {
-        completionHandlers.forEach({ self.completionHandlers[$0.addressPattern] = $0.completionHandler })
-        let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
-        client.send(packet: message)
-    }
+//    internal func sendMessage(with addressPattern: String, arguments: [Any], completionHandlers: [(addressPattern: String, completionHandler: EosKitCompletionHandler)]) {
+//        completionHandlers.forEach({ self.completionHandlers[$0.addressPattern] = $0.completionHandler })
+//        let message = OSCMessage(with: "\(eosRequestPrefix)\(addressPattern)", arguments: arguments)
+//        client.send(packet: message)
+//    }
     
 }
 
@@ -417,14 +417,14 @@ public final class EosConsole: NSObject, Identifiable {
 extension EosConsole: OSCPacketDestination {
     
     public func take(bundle: OSCBundle) {
-        // An eos family console doesn't send any OSC Bundles. It does receive them though!
+        // An eos family console doesn't send any OSC Bundles.
         return
     }
     
     public func take(message: OSCMessage) {
 //        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
-        if message.isEosReply {
-            let relativeAddress = message.addressWithoutEosReply()
+        if message.isFromEos {
+            let relativeAddress = message.addressWithoutEosOut()
             message.readdress(to: relativeAddress)
             if relativeAddress != eosPingRequest {
                 restartHeartbeatTimer()

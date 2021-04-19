@@ -89,26 +89,4 @@ public enum EosRecordTarget: Int {
         }
     }
     
-    public var type: Any.Type {
-        switch self {
-        case .patch: return [EosChannel].self
-        case .cueList: return [EosCueList].self
-        case .cue: return [EosCue].self
-        case .group: return [EosGroup].self
-        case .macro: return [EosMacro].self
-        case .sub: return [EosSub].self
-        case .preset: return [EosPreset].self
-        case .intensityPalette: return [EosIntensityPalette].self
-        case .focusPalette: return [EosFocusPalette].self
-        case .colorPalette: return [EosColorPalette].self
-        case .beamPalette: return [EosBeamPalette].self
-        case .curve: return [EosCurve].self
-        case .effect: return [EosEffect].self
-        case .snapshot: return [EosSnapshot].self
-        case .pixelMap: return [EosPixelMap].self
-        case .magicSheet: return [EosMagicSheet].self
-        case .setup: return EosSetup.self
-        }   
-    }
-    
 }
