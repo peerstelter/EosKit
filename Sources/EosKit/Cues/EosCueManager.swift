@@ -39,7 +39,7 @@ internal final class EosCueManager: EosTargetManagerProtocol {
                 return nil
             } else if message.addressPattern.contains("cuelist") {
                 return MessageType.list
-            } else if message.addressPattern.contains("noparts") {
+            } else if message.addressPattern.contains("noparts") || message.addressParts.count == 4 || message.addressParts[4] == "0" {
                 return MessageType.cue
             } else {
                 return MessageType.part
@@ -99,40 +99,51 @@ internal final class EosCueManager: EosTargetManagerProtocol {
     }
     
     internal func index(message: OSCMessage) {
-        guard let number = message.number(), let dNumber = Double(number),
+        guard let number = message.number(), let cueListNumber = Double(number),
               let messageType = MessageType.type(from: message)
         else { return }
         let cueNumber = message.subNumber() ?? ""
         switch messageType {
         case .list:
-            if database.keys.contains(dNumber) == false {
-                database[dNumber] = []
+            if database.keys.contains(cueListNumber) == false {
+                database[cueListNumber] = []
             }
             console.send(OSCMessage.getCountOfCuesNoPartsIn(list: number))
         case .cue:
             let key = "\(number)/\(cueNumber)"
-            if message.addressParts.count == 8, let partCount = message.arguments[26] as? NSNumber, let uPartCount = UInt32(exactly: partCount) {
-                messages[key] = (cue: [message], count: uPartCount, parts: [])
-            } else if let _ = messages[key] {
-                messages[key]?.cue.append(message)
-            }
-            if let targetMessages = messages[key], targetMessages.cue.count == EosCue.stepCount {
-                if targetMessages.count == 0 {
-                    if let cue = EosCue(messages: targetMessages.cue) {
-                        guard let list = database[dNumber] else { return }
-                        if list.isEmpty {
-                            database[dNumber]?.append(cue)
-                        } else {
-                            if let firstIndex = list.firstIndex(where: { $0.uuid == cue.uuid }) {
-                                database[dNumber]?.remove(at: firstIndex)
+            if message.arguments.isEmpty {
+                // The EosConsole has been notified of a change to a cue and details have been requested using the number
+                // for a cue that does not exist anymore.
+                if let list = database[cueListNumber], let dCueNumber = Double(cueNumber), let firstIndex = list.firstIndex(where: { $0.number == dCueNumber }) {
+                    messages[key] = nil
+                    database[cueListNumber]?.remove(at: firstIndex)
+                }
+            } else {
+                if message.addressParts.count == 8, let partCount = message.arguments[26] as? NSNumber, let uPartCount = UInt32(exactly: partCount) {
+                    messages[key] = (cue: [message], count: uPartCount, parts: [])
+                } else if let _ = messages[key] {
+                    messages[key]?.cue.append(message)
+                }
+                if let targetMessages = messages[key], targetMessages.cue.count == EosCue.stepCount {
+                    if targetMessages.count == 0 {
+                        if let cue = EosCue(messages: targetMessages.cue) {
+                            guard let list = database[cueListNumber] else { return }
+                            if list.isEmpty {
+                                database[cueListNumber]?.append(cue)
+                            } else {
+                                if let firstIndex = list.firstIndex(where: { $0.uuid == cue.uuid }) {
+                                    database[cueListNumber]?[firstIndex] = cue
+                                } else {
+                                    let index = list.insertionIndex(for: { $0.number < cue.number })
+                                    database[cueListNumber]?.insert(cue, at: index)
+                                }
+
                             }
-                            let index = list.insertionIndex(for: { $0.number < cue.number })
-                            database[dNumber]?.insert(cue, at: index)
+                            messages[key] = nil
                         }
-                        messages[key] = nil
+                    } else {
+                        console.send(OSCMessage.getCountOfPartsFor(cue: cueNumber, inList: number))
                     }
-                } else {
-                    console.send(OSCMessage.getCountOfPartsFor(cue: cueNumber, inList: number))
                 }
             }
         case .part:
@@ -148,39 +159,37 @@ internal final class EosCueManager: EosTargetManagerProtocol {
             if targetMessages.count == targetMessages.parts.count && targetMessages.parts.allSatisfy( { $0.count == EosCuePart.stepCount }) {
                 let parts = targetMessages.parts.compactMap { EosCuePart(messages: $0) }
                 guard let cue = EosCue(messages: targetMessages.cue, parts: parts),
-                      let list = database[dNumber]
+                      let list = database[cueListNumber]
                 else { return }
                 if list.isEmpty {
-                    database[dNumber]?.append(cue)
+                    database[cueListNumber]?.append(cue)
                 } else {
                     if let firstIndex = list.firstIndex(where: { $0.uuid == cue.uuid }) {
-                        database[dNumber]?.remove(at: firstIndex)
+                        database[cueListNumber]?.remove(at: firstIndex)
                     }
                     let index = list.insertionIndex(for: { $0.number < cue.number })
-                    database[dNumber]?.insert(cue, at: index)
+                    database[cueListNumber]?.insert(cue, at: index)
                 }
                 messages[key] = nil
             }
         }
-
     }
     
     internal func notify(message: OSCMessage) {
         guard let number = message.number(),
-              let dNumber = Double(number),
-              let cueList = database[dNumber]
+              let listNumber = Double(number),
         else { return }
         var cueNumbers: Set<Double> = []
         for argument in message.arguments[1...] where message.arguments.count >= 2 {
             cueNumbers = cueNumbers.union(EosOSCNumber.doubles(from: argument))
         }
         for cueNumber in cueNumbers {
-//            if let target = database[cueList].first(where: { $0.number == cueNumber }) {
-//                console.send(OSCMessage.get(target: T.target, withUUID: target.uuid))
-//            } else {
-//
-//                console.send(OSCMessage.get(target: T.target, withNumber: "\(targetNumber)"))
-//            }
+            // We request cue number details differently here in relation to other record targets.
+            // Ordinarily we would prefer to use a cues uuid to request information, but if you request
+            // detailed information for a cue via the cue's uuid and the cue has been deleted the return message
+            // looks like this - /get/cue/0/0... which means you would need to iterate through the whole database
+            // to find a cue with the uuid.
+            console.send(OSCMessage.getCueIn(list: listNumber, withNumber: cueNumber))
         }
     }
     
@@ -192,13 +201,17 @@ internal final class EosCueManager: EosTargetManagerProtocol {
 }
 
 extension OSCMessage {
-
+    
     static fileprivate func getCountOfCuesNoPartsIn(list: String) -> OSCMessage {
         return OSCMessage(with: "/eos/get/cue/\(list)/noparts/count")
     }
 
     static fileprivate func getCueNoPartsIn(list: String, atIndex index: Int32) -> OSCMessage {
         return OSCMessage(with: "/eos/get/cue/\(list)/noparts/index/\(index)")
+    }
+    
+    static fileprivate func getCueIn(list: Double, withNumber number: Double) -> OSCMessage {
+        return OSCMessage(with: "/eos/get/cue/\(list)/\(number)")
     }
 
     static fileprivate func getCountOfPartsFor(cue: String, inList list: String) -> OSCMessage {

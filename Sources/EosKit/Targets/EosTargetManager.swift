@@ -96,10 +96,11 @@ internal class EosTargetManager<T: EosTarget>: EosTargetManagerProtocol {
             if let targetMessages = messages[uuid], targetMessages.count == T.stepCount {
                 if let target = T(messages: targetMessages) {
                     if let firstIndex = database.firstIndex(where: { $0.uuid == target.uuid }) {
-                        database.remove(at: firstIndex)
+                        database[firstIndex] = target
+                    } else {
+                        let index = database.insertionIndex { $0.number < target.number }
+                        database.insert(target, at: index)
                     }
-                    let index = database.insertionIndex { $0.number < target.number }
-                    database.insert(target, at: index)
                     // TODO: This function gets called triggered via a notify message which isnt part of the synchronise proceedure...
                     // Do we need to query whether we are currently synchronising?
                     progress?.completedUnitCount += 1

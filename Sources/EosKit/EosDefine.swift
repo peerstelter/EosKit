@@ -80,7 +80,8 @@ internal let eosCueNoPartsFilters: Set =        ["/get/cuelist/count",
                                                  "/get/cue/*/*/*/fx/list/*/*",
                                                  "/get/cue/*/*/*/links/list/*/*",
                                                  "/get/cue/*/*/*/actions/list/*/*",
-                                                 "/notify/cue/*/list/*/*"]
+                                                 "/notify/cue/*/list/*/*",
+                                                 "/get/cue/*/*"]
 
 internal let eosGroupFilters: Set =             ["/get/group/count",
                                                  "/get/group/*/list/*/*",
