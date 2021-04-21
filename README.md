@@ -39,7 +39,7 @@ Obtain an `EosConsole` to use in your app.
 
 #### Automatic
 
-Using `EosBrowser` and providing it a delegate that implements the `EosConsoleDiscovererDelegate` protocol, instances of Eos consoles can be automatically discovered one or more IP networks.
+Using `EosBrowser` and providing it a delegate that implements the `EosConsoleDiscovererDelegate` protocol, Eos consoles can be automatically discovered on multiple IP networks.
 
 Create the `EosBrowser`:
 
@@ -61,17 +61,17 @@ func discoverer(_ discoverer: EosConsoleDiscoverer, didLoseConsole console: EosC
 }
 ```
 
-#### Semi Automatic (UDP Unicast)
+#### Semi Automatic (UDP unicast)
 
 If you don't want to automatically discover Eos consoles or in the likely instances that broadcasted packets are dropped by managed switches, you can discover an Eos console via unicast if you have an IP address.
 
 Create the `EosFinder`:
 
 ``` swift
-let hostIPAddress = "10.101.93.101"
+let ipAddress = "10.101.93.101"
 let finder = EosFinder()
 finder.delegate = self
-finder.find(host: hostIPAddress)
+finder.find(host: ipAddress)
 ```
 
 Conform to the `EosConsoleDiscovererDelegate` protocol:
