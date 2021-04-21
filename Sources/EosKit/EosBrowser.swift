@@ -28,21 +28,16 @@ import Foundation
 import OSCKit
 import NetUtils
 
-public protocol EosBrowserDelegate {
-    func browser(_ browser: EosBrowser, didFindConsole console: EosConsole)
-    func browser(_ browser: EosBrowser, didLoseConsole console: EosConsole)
-}
-
-public final class EosBrowser {
+public final class EosBrowser: EosConsoleDiscoverer {
     
     private lazy var request = OSCMessage(with: eosDiscoveryRequest, arguments: [port, name])
     private var discoveringInterfaces: [(server: OSCServer, client: OSCClient)] = []
     private var consoles: [String: [(console: EosConsole, heartbeat: Timer)]] = [:]
     private var discoveryTimer: Timer?
-    private let port: UInt16
-    private let name: String
+    public let port: UInt16
+    public let name: String
     
-    public var delegate: EosBrowserDelegate?
+    public var delegate: EosConsoleDiscovererDelegate?
     
     /// A browser able to discover Eos consoles on one or more network interfaces.
     ///
@@ -51,7 +46,7 @@ public final class EosBrowser {
     /// - Parameter interfaces: An array of network interfaces to search for Eos consoles on.
     ///                         An interface may be specified by name (e.g. "en1" or "lo0") or by IP address (e.g. "192.168.4.34").
     ///                         Interfaces can be `nil`, in which case the browser will search on all available network interfaces.
-    public init(name: String = "EosKit", port: UInt16 = 3035, interfaces: [String]? = nil) {
+    public init(name: String = "EosKit Browser", port: UInt16 = 3035, interfaces: [String]? = nil) {
         self.name = name
         self.port = port
         if let interfaces = interfaces, !interfaces.isEmpty {
@@ -176,8 +171,7 @@ public final class EosBrowser {
         let console = foundConsoles[index].console
         foundConsoles.remove(at: index)
         consoles[interface] = foundConsoles
-        print("\(name) Lost Console: \(interface) : \(console.host)")
-        delegate?.browser(self, didLoseConsole: console)
+        delegate?.discoverer(self, didLoseConsole: console)
     }
         
 }
@@ -189,7 +183,6 @@ extension EosBrowser: OSCPacketDestination {
         guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count >= 2 else { return }
         if var foundConsoles = consoles[interface], let index = foundConsoles.firstIndex(where: { $0.console.host == host }) {
             // MARK: Console Still Online
-//            print("Still Online: \(interface) : \(host)")
             foundConsoles[index].heartbeat.invalidate()
             let heartbeat = Timer(timeInterval: 5, target: self, selector: #selector(heartbeatTimeout(timer:)), userInfo: ["interface": interface, "host" : host], repeats: false)
             foundConsoles[index].heartbeat = heartbeat
@@ -197,28 +190,21 @@ extension EosBrowser: OSCPacketDestination {
             RunLoop.current.add(heartbeat, forMode: .common)
         } else {
             // MARK: New Console Found
-            print("\(name) Found Console: \(interface) : \(host)")
             // Get the receive port from the message. This will most likely be 3032.
             guard let consolePort = message.arguments[0] as? NSNumber, let port = UInt16(exactly: consolePort) else { return }
-
             // Get the name and console type from the message.
             guard let nameAndType = nameAndType(from: message) else { return }
-            
             let console = EosConsole(name: nameAndType.name, type: nameAndType.type, interface: interface, host: host, port: port)
-            
             let heartbeat = Timer(timeInterval: 5, target: self, selector: #selector(heartbeatTimeout(timer:)), userInfo: ["interface": interface, "host" : host], repeats: false)
             RunLoop.current.add(heartbeat, forMode: .common)
-            
             if var interfacesConsoles = consoles[interface] {
                 interfacesConsoles.append((console: console, heartbeat: heartbeat))
                 consoles[interface] = interfacesConsoles
             } else {
                 consoles[interface] = [(console: console, heartbeat: heartbeat)]
             }
-            
-            delegate?.browser(self, didFindConsole: console)
+            delegate?.discoverer(self, didFindConsole: console)
         }
-        
     }
     
     public func take(bundle: OSCBundle) {

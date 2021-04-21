@@ -31,7 +31,7 @@ import Combine
 public protocol EosConsoleDelegate {
     func console(_ console: EosConsole, didUpdateState state: EosConsoleState)
     func console(_ console: EosConsole, didReceiveUndefinedMessage message: String)
-    func console(_ console: EosConsole, didCompleteSynchronisingTargets targets: Set<EosRecordTarget>)
+    func console(_ console: EosConsole, didCompleteSynchronizingTargets targets: Set<EosRecordTarget>)
 }
 
 /// Represents the current state of an EosConsole.
@@ -82,7 +82,8 @@ public final class EosConsole: NSObject, Identifiable {
     
     private var completionHandlers: [String : EosKitCompletionHandler] = [:]
     private let client = OSCClient()
-    private let uuid = UUID()
+    public var id: UUID { uuid }
+    public let uuid = UUID()
     private var heartbeats = -1 // Not running
     private var heartbeatTimer: Timer?
     private var systemFiltersSent = false
@@ -151,7 +152,10 @@ public final class EosConsole: NSObject, Identifiable {
     
     deinit {
         print("Deinitialised with \(name) : \(type.rawValue) : \(interface) : \(host) : \(port)")
-        progress.removeObserver(self, forKeyPath: "fractionCompleted", context: &observationContext)
+        if progress.observationInfo != nil {
+            progress.removeObserver(self, forKeyPath: "fractionCompleted", context: &observationContext)
+        }
+
     }
     
     public func connect() -> Bool {
@@ -494,7 +498,7 @@ extension EosConsole {
             let progress = (object as! Progress)
             handler(progress.fractionCompleted, progress.localizedDescription!, progress.localizedAdditionalDescription!)
             if let delegate = delegate, progress.isFinished {
-                delegate.console(self, didCompleteSynchronisingTargets: self.targets)
+                delegate.console(self, didCompleteSynchronizingTargets: self.targets)
             }
         } else {
             super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
