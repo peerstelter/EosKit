@@ -61,7 +61,7 @@ public enum EosConsoleType: String {
     case unknown
 }
 
-public final class EosConsole: NSObject, Identifiable {
+public final class EosConsole: NSObject, Identifiable, ObservableObject {
     
     /// The current state of the console.
     ///

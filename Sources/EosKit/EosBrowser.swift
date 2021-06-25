@@ -78,6 +78,8 @@ public final class EosBrowser: EosConsoleDiscoverer {
             $0.server.delegate = nil
         })
         discoveringInterfaces.removeAll()
+        stopConsoleHeartbeats()
+        consoles.removeAll()
     }
     
     /// Start the browser discovering new Eos consoles.
@@ -96,11 +98,12 @@ public final class EosBrowser: EosConsoleDiscoverer {
     
     /// Stop the browser from discovering new Eos consoles.
     public func stop() {
-        discoveringInterfaces.forEach({
+        discoveringInterfaces.forEach {
             $0.server.stopListening()
             $0.server.delegate = nil
-        })
+        }
         stopDiscoveryTimer()
+        stopConsoleHeartbeats()
     }
     
     @objc func requestConsole(timer: Timer) {
@@ -119,6 +122,14 @@ public final class EosBrowser: EosConsoleDiscoverer {
     private func stopDiscoveryTimer() {
         discoveryTimer?.invalidate()
         discoveryTimer = nil
+    }
+    
+    private func stopConsoleHeartbeats() {
+        consoles.forEach {
+            $0.value.forEach { console in
+                console.heartbeat.invalidate()
+            }
+        }
     }
     
     /// Creates an `OSCClient` configured to broadcast discovery request messages on a given interface.
@@ -179,7 +190,6 @@ public final class EosBrowser: EosConsoleDiscoverer {
 extension EosBrowser: OSCPacketDestination {
     
     public func take(message: OSCMessage) {
-//        print(OSCAnnotation.annotation(for: message, with: .spaces, andType: true))
         guard message.addressPattern == eosDiscoveryReply, let interface = message.replySocket?.interface, let host = message.replySocket?.host, message.arguments.count >= 2 else { return }
         if var foundConsoles = consoles[interface], let index = foundConsoles.firstIndex(where: { $0.console.host == host }) {
             // MARK: Console Still Online
