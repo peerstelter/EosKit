@@ -17,7 +17,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/SammySmallman/OSCKit", from: "2.x"),
+        .package(url: "https://github.com/SammySmallman/OSCKit", from: "2.0"),
         .package(name: "NetUtils", url: "https://github.com/svdo/swift-netutils", from: "4.1.0"),
     ],
     targets: [
